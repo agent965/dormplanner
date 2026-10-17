@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type Item = {
@@ -9,6 +8,7 @@ type Item = {
   name: string;
   quantity: number;
   note: string | null;
+  approved: boolean;
   createdByName: string;
   createdById: string | null;
   createdByGuestId: string | null;
@@ -24,10 +24,17 @@ type Props = {
   userId: string | null;
   guestId: string | null;
   initialGuestName: string | null;
+  isHost: boolean;
 };
 
-export function BringList({ eventId, actorKind, userId, guestId, initialGuestName }: Props) {
-  const router = useRouter();
+export function BringList({
+  eventId,
+  actorKind,
+  userId,
+  guestId,
+  initialGuestName,
+  isHost,
+}: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -37,9 +44,6 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
   const mounted = useRef(true);
 
   const needsName = actorKind === "guest" && !initialGuestName;
-
-  const mine = (row: { createdById: string | null; createdByGuestId: string | null }) =>
-    actorKind === "user" ? row.createdById === userId : row.createdByGuestId === guestId;
 
   const minesClaim = (row: { claimedById: string | null; claimedByGuestId: string | null }) =>
     actorKind === "user" ? row.claimedById === userId : row.claimedByGuestId === guestId;
@@ -118,17 +122,20 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
     refresh();
   }
 
+  const approved = items.filter((i) => i.approved);
+  const pending = items.filter((i) => !i.approved);
+
   return (
     <div className="space-y-3">
       <ul className="space-y-2">
         {loading ? (
           <li className="text-sm text-[color:var(--muted)]">Loading list…</li>
-        ) : items.length === 0 ? (
+        ) : approved.length === 0 && pending.length === 0 ? (
           <li className="text-sm text-[color:var(--muted)]">
             No items yet. Add the first thing to bring.
           </li>
         ) : (
-          items.map((item) => {
+          approved.map((item) => {
             const myClaim = minesClaim(item);
             const claimed = !!(item.claimedById || item.claimedByGuestId);
             return (
@@ -163,7 +170,7 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
                 </div>
                 <div className="flex items-center gap-2">
                   {claimed ? (
-                    myClaim ? (
+                    myClaim || isHost ? (
                       <button
                         onClick={() => patch(item.id, { action: "unclaim" })}
                         className="text-xs px-2 py-1 rounded border border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
@@ -179,13 +186,13 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
                       I'll bring it
                     </button>
                   )}
-                  {mine(item) ? (
+                  {isHost ? (
                     <button
                       onClick={() => {
                         if (confirm(`Remove "${item.name}"?`)) patch(item.id, { action: "delete" });
                       }}
                       className="text-xs text-[color:var(--muted)] hover:text-[color:var(--danger)]"
-                      title="Delete (creator only)"
+                      title="Delete (host)"
                     >
                       ✕
                     </button>
@@ -197,6 +204,53 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
         )}
       </ul>
 
+      {/* Pending suggestions — host-only view */}
+      {isHost && pending.length > 0 ? (
+        <div className="pt-2 space-y-2">
+          <div className="text-xs uppercase tracking-wide text-[color:var(--muted)] flex items-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[color:var(--husky-gold)]" />
+            Suggested by guests · needs your OK
+          </div>
+          <ul className="space-y-2">
+            {pending.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-start justify-between gap-3 rounded-lg border border-dashed border-[color:var(--husky-gold)] bg-[color:var(--husky-gold)]/5 p-3 opacity-80"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium italic">{item.name}</span>
+                    {item.quantity > 1 ? (
+                      <span className="text-xs text-[color:var(--muted)]">×{item.quantity}</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--muted)]">
+                    Suggested by {item.createdByName}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => patch(item.id, { action: "approve" })}
+                    className="text-xs px-2 py-1 rounded bg-[color:var(--husky-purple)] text-white"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Reject "${item.name}"?`)) patch(item.id, { action: "delete" });
+                    }}
+                    className="text-xs text-[color:var(--muted)] hover:text-[color:var(--danger)]"
+                    title="Reject"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <form
         onSubmit={addItem}
         className="rounded-lg border border-dashed border-[color:var(--border)] p-3 space-y-2"
@@ -205,7 +259,7 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. 2L of coke"
+            placeholder={isHost ? "Add an item…" : "Suggest an item…"}
             className="flex-1 bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
             maxLength={80}
           />
@@ -222,12 +276,16 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
             disabled={adding || !name.trim()}
             className="px-3 py-2 text-sm font-medium rounded-md bg-[color:var(--accent)] text-[color:var(--accent-fg)] disabled:opacity-50"
           >
-            Add
+            {isHost ? "Add" : "Suggest"}
           </button>
         </div>
+        {!isHost ? (
+          <p className="text-[10px] text-[color:var(--muted)]">
+            Your suggestion goes to the host for approval before appearing on the list.
+          </p>
+        ) : null}
         {error ? <p className="text-xs text-[color:var(--danger)]">{error}</p> : null}
       </form>
     </div>
   );
 }
-

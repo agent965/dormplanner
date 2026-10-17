@@ -112,6 +112,8 @@ export const bringItems = pgTable(
       onDelete: "set null",
     }),
     claimedByGuestId: text("claimed_by_guest_id"),
+    // Host approval: true for host-added items, false for guest/non-host suggestions
+    approved: boolean("approved").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

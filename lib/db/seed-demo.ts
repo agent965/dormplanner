@@ -94,6 +94,7 @@ async function main() {
         quantity: it.quantity,
         createdByName: me.username,
         createdById: me.id,
+        approved: true,
       });
     }
     console.log(`✓ Created "${ev.title}"`);

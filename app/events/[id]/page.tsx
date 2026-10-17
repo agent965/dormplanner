@@ -76,6 +76,7 @@ export default async function EventDetail({
     .orderBy(desc(rsvps.updatedAt));
 
   const full = row.capacity != null && yesCount >= row.capacity;
+  const isHost = actor?.kind === "user" && actor.userId === row.hostId;
 
   return (
     <article className="space-y-6">
@@ -136,7 +137,7 @@ export default async function EventDetail({
         <div className="flex items-baseline justify-between">
           <h2 className="font-medium">What to bring</h2>
           <span className="text-xs text-[color:var(--muted)]">
-            Live — anyone can add or claim
+            {isHost ? "You moderate · live" : "Anyone can suggest · live"}
           </span>
         </div>
         <BringList
@@ -145,6 +146,7 @@ export default async function EventDetail({
           userId={actor?.kind === "user" ? actor.userId : null}
           guestId={actor?.kind === "guest" ? actor.guestId : null}
           initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
+          isHost={isHost}
         />
       </section>
     </article>
