@@ -5,6 +5,7 @@ import { events, rsvps, users } from "@/lib/db/schema";
 import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
 import { GuestNameGate } from "@/components/GuestNameGate";
+import { HostEventActions } from "@/components/HostEventActions";
 import { dietaryTagLabel, formatEventTime } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
 import { readActor } from "@/lib/actor";
@@ -101,6 +102,22 @@ export default async function EventDetail({
         ) : null}
         {row.description ? (
           <p className="whitespace-pre-wrap text-sm pt-2">{row.description}</p>
+        ) : null}
+        {isHost ? (
+          <HostEventActions
+            event={{
+              id: row.id,
+              title: row.title,
+              description: row.description,
+              dormSlug: row.dormSlug,
+              location: row.location,
+              startsAt: new Date(row.startsAt).toISOString(),
+              capacity: row.capacity,
+              tags: row.tags ?? [],
+              openToAllDorms: row.openToAllDorms,
+              yesCount,
+            }}
+          />
         ) : null}
       </header>
 
