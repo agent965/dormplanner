@@ -7,22 +7,9 @@ import { ensureActor } from "@/lib/actor";
 import { setGuestName } from "@/lib/guest";
 import { newId } from "@/lib/utils";
 
-const DIETARY_TAGS = [
-  "vegetarian",
-  "vegan",
-  "gluten_free",
-  "dairy_free",
-  "nut_free",
-  "halal",
-  "kosher",
-  "contains_pork",
-  "contains_alcohol",
-] as const;
-
 const createSchema = z.object({
   name: z.string().min(1).max(80),
   quantity: z.number().int().positive().max(99).default(1),
-  tags: z.array(z.enum(DIETARY_TAGS)).default([]),
   note: z.string().max(200).optional(),
   guestName: z.string().trim().min(1).max(40).optional(),
 });
@@ -35,7 +22,6 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       id: bringItems.id,
       name: bringItems.name,
       quantity: bringItems.quantity,
-      tags: bringItems.tags,
       note: bringItems.note,
       createdByName: bringItems.createdByName,
       createdById: bringItems.createdById,
@@ -76,7 +62,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     eventId,
     name: parsed.data.name,
     quantity: parsed.data.quantity,
-    tags: parsed.data.tags,
     note: parsed.data.note,
     createdByName: actor.displayName!,
     createdById: actor.kind === "user" ? actor.userId : null,

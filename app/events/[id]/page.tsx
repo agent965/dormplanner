@@ -5,7 +5,7 @@ import { events, rsvps, users } from "@/lib/db/schema";
 import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
 import { GuestNameGate } from "@/components/GuestNameGate";
-import { formatEventTime } from "@/lib/utils";
+import { dietaryTagLabel, formatEventTime } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
 import { readActor } from "@/lib/actor";
 
@@ -28,6 +28,7 @@ export default async function EventDetail({
       location: events.location,
       dormSlug: events.dormSlug,
       capacity: events.capacity,
+      tags: events.tags,
       openToAllDorms: events.openToAllDorms,
       hostId: events.hostId,
       hostName: users.username,
@@ -88,6 +89,15 @@ export default async function EventDetail({
           Hosted by {row.hostName ?? "someone"}
           {row.openToAllDorms ? " · open to all dorms" : ""}
         </div>
+        {row.tags && row.tags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {row.tags.map((t) => (
+              <span key={t} className="tag">
+                {dietaryTagLabel(t)}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {row.description ? (
           <p className="whitespace-pre-wrap text-sm pt-2">{row.description}</p>
         ) : null}

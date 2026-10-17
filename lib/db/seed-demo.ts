@@ -29,12 +29,13 @@ async function main() {
       startsAt: tomorrow,
       location: "4F lounge",
       capacity: 25,
+      tags: ["vegetarian", "vegan", "gluten_free"] as const,
       items: [
-        { name: "2L of coke", quantity: 2, tags: [] },
-        { name: "Chips & dip", quantity: 2, tags: ["vegetarian"] as const },
-        { name: "Veggie platter", quantity: 1, tags: ["vegan", "gluten_free"] as const },
-        { name: "Cupcakes", quantity: 12, tags: ["vegetarian"] as const },
-        { name: "Paper plates", quantity: 1, tags: [] },
+        { name: "2L of coke", quantity: 2 },
+        { name: "Chips & dip", quantity: 2 },
+        { name: "Veggie platter", quantity: 1 },
+        { name: "Cupcakes", quantity: 12 },
+        { name: "Paper plates", quantity: 1 },
       ],
     },
     {
@@ -43,9 +44,10 @@ async function main() {
       startsAt: in2h,
       location: "3F study room",
       capacity: 15,
+      tags: ["vegetarian"] as const,
       items: [
-        { name: "Coffee carafe", quantity: 1, tags: [] },
-        { name: "Donuts", quantity: 12, tags: ["vegetarian"] as const },
+        { name: "Coffee carafe", quantity: 1 },
+        { name: "Donuts", quantity: 12 },
       ],
     },
     {
@@ -54,11 +56,12 @@ async function main() {
       startsAt: friday,
       location: "Lander kitchen",
       capacity: 10,
+      tags: ["vegan", "gluten_free"] as const,
       items: [
-        { name: "Rice noodles", quantity: 2, tags: ["gluten_free", "vegan"] as const },
-        { name: "Peanuts", quantity: 1, tags: ["vegan"] as const },
-        { name: "Lime", quantity: 6, tags: ["vegan"] as const },
-        { name: "Tofu", quantity: 2, tags: ["vegan"] as const },
+        { name: "Rice noodles", quantity: 2 },
+        { name: "Peanuts", quantity: 1 },
+        { name: "Lime", quantity: 6 },
+        { name: "Tofu", quantity: 2 },
       ],
     },
   ];
@@ -74,6 +77,7 @@ async function main() {
       location: ev.location,
       startsAt: ev.startsAt,
       capacity: ev.capacity,
+      tags: [...ev.tags],
       openToAllDorms: false,
     });
 
@@ -88,7 +92,6 @@ async function main() {
         eventId,
         name: it.name,
         quantity: it.quantity,
-        tags: [...it.tags],
         createdByName: me.username,
         createdById: me.id,
       });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatEventTime } from "@/lib/utils";
+import { dietaryTagLabel, formatEventTime } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
 
 type EventCardProps = {
@@ -12,6 +12,7 @@ type EventCardProps = {
   hostName?: string | null;
   rsvpYesCount: number;
   capacity?: number | null;
+  tags?: string[] | null;
 };
 
 export function EventCard(e: EventCardProps) {
@@ -28,6 +29,15 @@ export function EventCard(e: EventCardProps) {
             {e.location ? ` · ${e.location}` : ""}
           </div>
           <h3 className="mt-1 text-lg font-semibold">{e.title}</h3>
+          {e.tags && e.tags.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {e.tags.map((t) => (
+                <span key={t} className="tag">
+                  {dietaryTagLabel(t)}
+                </span>
+              ))}
+            </div>
+          ) : null}
           {e.description ? (
             <p className="mt-1 text-sm text-[color:var(--muted)] line-clamp-2">
               {e.description}

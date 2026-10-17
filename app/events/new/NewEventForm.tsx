@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { UW_DORMS } from "@/lib/dorms";
+import { cn, DIETARY_TAGS, type DietaryTagValue } from "@/lib/utils";
 
 const EVENT_TEMPLATES = [
   { label: "Potluck", title: "Floor potluck", desc: "Everyone brings something. Add what you're bringing to the list." },
@@ -32,9 +33,13 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
   const [location, setLocation] = useState("");
   const [startsAt, setStartsAt] = useState(toLocalInput(roundToNextHour(new Date())));
   const [capacity, setCapacity] = useState("");
+  const [tags, setTags] = useState<DietaryTagValue[]>([]);
   const [openToAll, setOpenToAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleTag = (t: DietaryTagValue) =>
+    setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
   // Quiet-hours warning if end time (default +2h) crosses 10pm on a weeknight
   const start = new Date(startsAt);
@@ -58,6 +63,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           location: location || undefined,
           startsAt: new Date(startsAt).toISOString(),
           capacity: capacity ? parseInt(capacity) : undefined,
+          tags,
           openToAllDorms: openToAll,
         }),
       });
@@ -116,6 +122,27 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
         />
       </label>
+
+      <div>
+        <span className="text-xs text-[color:var(--muted)]">Dietary tags</span>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {DIETARY_TAGS.map((t) => (
+            <button
+              type="button"
+              key={t.v}
+              onClick={() => toggleTag(t.v)}
+              className={cn(
+                "text-xs px-2.5 py-1 rounded-full border transition-colors",
+                tags.includes(t.v)
+                  ? "bg-[color:var(--husky-purple)] text-white border-transparent"
+                  : "border-[color:var(--border)] text-[color:var(--muted)] hover:border-[color:var(--husky-purple)]"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">

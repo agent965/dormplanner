@@ -5,7 +5,6 @@ CREATE TABLE "bring_items" (
 	"event_id" text NOT NULL,
 	"name" text NOT NULL,
 	"quantity" integer DEFAULT 1 NOT NULL,
-	"tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
 	"note" text,
 	"created_by_name" text NOT NULL,
 	"created_by_id" text,
@@ -33,6 +32,7 @@ CREATE TABLE "events" (
 	"starts_at" timestamp with time zone NOT NULL,
 	"ends_at" timestamp with time zone,
 	"capacity" integer,
+	"tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
 	"open_to_all_dorms" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );

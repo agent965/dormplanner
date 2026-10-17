@@ -38,6 +38,7 @@ export default async function Home() {
       location: events.location,
       dormSlug: events.dormSlug,
       capacity: events.capacity,
+      tags: events.tags,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
         select count(*)::int from ${rsvps}
@@ -129,6 +130,7 @@ export default async function Home() {
                   hostName={e.hostName}
                   rsvpYesCount={e.rsvpYesCount}
                   capacity={e.capacity}
+                  tags={e.tags}
                 />
               </li>
             ))}

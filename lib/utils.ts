@@ -33,3 +33,34 @@ export function relativeTime(d: Date): string {
   const days = Math.round(hrs / 24);
   return diffMs >= 0 ? `in ${days}d` : `${days}d ago`;
 }
+
+export const DIETARY_TAGS = [
+  { v: "vegetarian", label: "veg" },
+  { v: "vegan", label: "vegan" },
+  { v: "gluten_free", label: "GF" },
+  { v: "dairy_free", label: "DF" },
+  { v: "nut_free", label: "nut-free" },
+  { v: "halal", label: "halal" },
+  { v: "kosher", label: "kosher" },
+  { v: "contains_pork", label: "⚠ pork" },
+  { v: "contains_alcohol", label: "⚠ alcohol" },
+] as const;
+
+export const DIETARY_TAG_VALUES = [
+  "vegetarian",
+  "vegan",
+  "gluten_free",
+  "dairy_free",
+  "nut_free",
+  "halal",
+  "kosher",
+  "contains_pork",
+  "contains_alcohol",
+] as const;
+
+export type DietaryTagValue = (typeof DIETARY_TAGS)[number]["v"];
+
+export function dietaryTagLabel(v: string): string {
+  return DIETARY_TAGS.find((d) => d.v === v)?.label ?? v;
+}
+

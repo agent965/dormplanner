@@ -4,25 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const DIETARY_TAGS = [
-  { v: "vegetarian", label: "veg" },
-  { v: "vegan", label: "vegan" },
-  { v: "gluten_free", label: "GF" },
-  { v: "dairy_free", label: "DF" },
-  { v: "nut_free", label: "nut-free" },
-  { v: "halal", label: "halal" },
-  { v: "kosher", label: "kosher" },
-  { v: "contains_pork", label: "⚠ pork" },
-  { v: "contains_alcohol", label: "⚠ alcohol" },
-] as const;
-
-type Tag = (typeof DIETARY_TAGS)[number]["v"];
-
 type Item = {
   id: string;
   name: string;
   quantity: number;
-  tags: Tag[];
   note: string | null;
   createdByName: string;
   createdById: string | null;
@@ -48,7 +33,6 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [qty, setQty] = useState(1);
-  const [tags, setTags] = useState<Tag[]>([]);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
 
@@ -96,7 +80,7 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
       const r = await fetch(`/api/events/${eventId}/items`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), quantity: qty, tags }),
+        body: JSON.stringify({ name: name.trim(), quantity: qty }),
       });
       if (!r.ok) {
         const data = await r.json().catch(() => ({}));
@@ -109,7 +93,6 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
       }
       setName("");
       setQty(1);
-      setTags([]);
       refresh();
     } finally {
       setAdding(false);
@@ -134,9 +117,6 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
     }
     refresh();
   }
-
-  const toggleTag = (t: Tag) =>
-    setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
   return (
     <div className="space-y-3">
@@ -172,11 +152,6 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
                     {item.quantity > 1 ? (
                       <span className="text-xs text-[color:var(--muted)]">×{item.quantity}</span>
                     ) : null}
-                    {item.tags.map((t) => (
-                      <span key={t} className="tag">
-                        {DIETARY_TAGS.find((d) => d.v === t)?.label ?? t}
-                      </span>
-                    ))}
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--muted)]">
                     {claimed
@@ -250,25 +225,9 @@ export function BringList({ eventId, actorKind, userId, guestId, initialGuestNam
             Add
           </button>
         </div>
-        <div className="flex flex-wrap gap-1">
-          {DIETARY_TAGS.map((t) => (
-            <button
-              type="button"
-              key={t.v}
-              onClick={() => toggleTag(t.v)}
-              className={cn(
-                "text-[10px] px-2 py-1 rounded-full border",
-                tags.includes(t.v)
-                  ? "bg-[color:var(--husky-purple)] text-white border-transparent"
-                  : "border-[color:var(--border)] text-[color:var(--muted)]"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
         {error ? <p className="text-xs text-[color:var(--danger)]">{error}</p> : null}
       </form>
     </div>
   );
 }
+

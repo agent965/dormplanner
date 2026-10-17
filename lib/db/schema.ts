@@ -56,6 +56,7 @@ export const events = pgTable(
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }),
     capacity: integer("capacity"),
+    tags: dietaryTag("tags").array().notNull().default([]),
     openToAllDorms: boolean("open_to_all_dorms").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -100,7 +101,6 @@ export const bringItems = pgTable(
       .references(() => events.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     quantity: integer("quantity").notNull().default(1),
-    tags: dietaryTag("tags").array().notNull().default([]),
     note: text("note"),
     createdByName: text("created_by_name").notNull(),
     createdById: text("created_by_id").references(() => users.id, {

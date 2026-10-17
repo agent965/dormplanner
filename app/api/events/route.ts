@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
-import { newId } from "@/lib/utils";
+import { DIETARY_TAG_VALUES, newId } from "@/lib/utils";
 
 const createSchema = z.object({
   title: z.string().min(1).max(120),
@@ -13,6 +13,7 @@ const createSchema = z.object({
   startsAt: z.string(),
   endsAt: z.string().optional(),
   capacity: z.number().int().positive().max(1000).optional(),
+  tags: z.array(z.enum(DIETARY_TAG_VALUES)).default([]),
   openToAllDorms: z.boolean().optional(),
 });
 
@@ -37,7 +38,9 @@ export async function POST(req: Request) {
     startsAt: new Date(v.startsAt),
     endsAt: v.endsAt ? new Date(v.endsAt) : null,
     capacity: v.capacity ?? null,
+    tags: v.tags,
     openToAllDorms: v.openToAllDorms ?? false,
   });
   return NextResponse.json({ id });
 }
+
