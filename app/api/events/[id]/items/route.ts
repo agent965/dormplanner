@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { bringItems, users } from "@/lib/db/schema";
+import { bringItems } from "@/lib/db/schema";
+import { ensureActor } from "@/lib/actor";
+import { setGuestName } from "@/lib/guest";
 import { newId } from "@/lib/utils";
 
 const DIETARY_TAGS = [
@@ -23,9 +24,10 @@ const createSchema = z.object({
   quantity: z.number().int().positive().max(99).default(1),
   tags: z.array(z.enum(DIETARY_TAGS)).default([]),
   note: z.string().max(200).optional(),
+  guestName: z.string().trim().min(1).max(40).optional(),
 });
 
-// GET /api/events/:id/items — list all items with claimer info (for polling)
+// GET /api/events/:id/items — list all items (public)
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id: eventId } = await ctx.params;
   const rows = await db
@@ -35,29 +37,37 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       quantity: bringItems.quantity,
       tags: bringItems.tags,
       note: bringItems.note,
-      claimedById: bringItems.claimedById,
-      claimedByName: users.name,
+      createdByName: bringItems.createdByName,
       createdById: bringItems.createdById,
+      createdByGuestId: bringItems.createdByGuestId,
+      claimedByName: bringItems.claimedByName,
+      claimedById: bringItems.claimedById,
+      claimedByGuestId: bringItems.claimedByGuestId,
       updatedAt: bringItems.updatedAt,
     })
     .from(bringItems)
-    .leftJoin(users, eq(bringItems.claimedById, users.id))
     .where(eq(bringItems.eventId, eventId))
     .orderBy(bringItems.createdAt);
 
   return NextResponse.json({ items: rows });
 }
 
-// POST /api/events/:id/items — create a new item
+// POST /api/events/:id/items — create a new item (user OR guest)
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   const { id: eventId } = await ctx.params;
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const actor = await ensureActor();
+  if (actor.kind === "guest" && parsed.data.guestName) {
+    await setGuestName(parsed.data.guestName);
+    actor.displayName = parsed.data.guestName;
+  }
+  if (actor.kind === "guest" && !actor.displayName) {
+    return NextResponse.json({ error: "name_required" }, { status: 400 });
   }
 
   const id = newId();
@@ -68,7 +78,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     quantity: parsed.data.quantity,
     tags: parsed.data.tags,
     note: parsed.data.note,
-    createdById: session.user.id,
+    createdByName: actor.displayName!,
+    createdById: actor.kind === "user" ? actor.userId : null,
+    createdByGuestId: actor.kind === "guest" ? actor.guestId : null,
   });
   return NextResponse.json({ id });
 }

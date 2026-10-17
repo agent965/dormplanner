@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { db } from "./index";
 import { bringItems, events, rsvps, users } from "./schema";
 import { newId } from "../utils";
@@ -80,7 +79,7 @@ async function main() {
 
     await db
       .insert(rsvps)
-      .values({ eventId, userId: me.id, status: "yes" })
+      .values({ id: newId(), eventId, userId: me.id, status: "yes" })
       .onConflictDoNothing();
 
     for (const it of ev.items) {
@@ -90,6 +89,7 @@ async function main() {
         name: it.name,
         quantity: it.quantity,
         tags: [...it.tags],
+        createdByName: me.name ?? "Host",
         createdById: me.id,
       });
     }

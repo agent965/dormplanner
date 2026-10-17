@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type Status = "yes" | "maybe" | "no";
@@ -9,15 +10,30 @@ export function RsvpControl({
   eventId,
   initial,
   full,
+  actorKind,
+  initialGuestName,
 }: {
   eventId: string;
   initial: Status | null;
   full: boolean;
+  actorKind: "user" | "guest";
+  initialGuestName: string | null;
 }) {
+  const router = useRouter();
   const [status, setStatus] = useState<Status | null>(initial);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function needsName() {
+    return actorKind === "guest" && !initialGuestName;
+  }
 
   function set(next: Status) {
+    if (needsName()) {
+      setError("Enter your name above before RSVPing.");
+      return;
+    }
+    setError(null);
     const previous = status;
     setStatus(next);
     startTransition(async () => {
@@ -28,8 +44,15 @@ export function RsvpControl({
       });
       if (!r.ok) {
         setStatus(previous);
-        alert("Could not update RSVP.");
+        const data = await r.json().catch(() => ({}));
+        setError(
+          data?.error === "name_required"
+            ? "Please set your name above first."
+            : "Could not update RSVP."
+        );
+        return;
       }
+      router.refresh();
     });
   }
 
@@ -60,6 +83,7 @@ export function RsvpControl({
       {full && status !== "yes" ? (
         <p className="mt-2 text-xs text-[color:var(--danger)]">Event is at capacity.</p>
       ) : null}
+      {error ? <p className="mt-2 text-xs text-[color:var(--danger)]">{error}</p> : null}
     </div>
   );
 }

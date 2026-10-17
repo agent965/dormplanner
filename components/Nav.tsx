@@ -16,27 +16,32 @@ export function Nav({ user }: { user: NavUser }) {
           <span>dormplanner</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm">
-          <Link href="/events/new" className="hover:underline">
-            New event
-          </Link>
           {user ? (
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/signin" });
-              }}
-            >
-              <button
-                type="submit"
-                className="text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
-                title={user.email ?? undefined}
+            <>
+              <Link href="/events/new" className="hover:underline">
+                New event
+              </Link>
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
               >
-                Sign out
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+                  title={user.email ?? undefined}
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
           ) : (
-            <Link href="/signin" className="hover:underline">
-              Sign in
+            <Link
+              href="/signin"
+              className="px-3 py-1.5 rounded-md border border-[color:var(--husky-purple)] text-[color:var(--husky-purple)] hover:bg-[color:var(--husky-purple)] hover:text-white transition-colors"
+            >
+              Sign in to host
             </Link>
           )}
         </nav>

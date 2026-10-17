@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
+import { GuestNameGate } from "@/components/GuestNameGate";
 import { formatEventTime } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
+import { readActor } from "@/lib/actor";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +17,6 @@ export default async function EventDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id) return null;
 
   const [row] = await db
     .select({
@@ -46,13 +45,30 @@ export default async function EventDetail({
     .where(and(eq(rsvps.eventId, id), eq(rsvps.status, "yes")));
   const yesCount = yesCountRow[0]?.c ?? 0;
 
-  const [myRsvp] = await db
-    .select({ status: rsvps.status })
-    .from(rsvps)
-    .where(and(eq(rsvps.eventId, id), eq(rsvps.userId, session.user.id)));
+  const actor = await readActor();
 
-  const guests = await db
-    .select({ name: users.name, status: rsvps.status })
+  // Find current viewer's RSVP (if any)
+  let myRsvp: { status: "yes" | "maybe" | "no" } | undefined;
+  if (actor?.kind === "user") {
+    const [r] = await db
+      .select({ status: rsvps.status })
+      .from(rsvps)
+      .where(and(eq(rsvps.eventId, id), eq(rsvps.userId, actor.userId)));
+    myRsvp = r;
+  } else if (actor?.kind === "guest") {
+    const [r] = await db
+      .select({ status: rsvps.status })
+      .from(rsvps)
+      .where(and(eq(rsvps.eventId, id), eq(rsvps.guestId, actor.guestId)));
+    myRsvp = r;
+  }
+
+  const guestList = await db
+    .select({
+      name: users.name,
+      guestName: rsvps.guestName,
+      status: rsvps.status,
+    })
     .from(rsvps)
     .leftJoin(users, eq(rsvps.userId, users.id))
     .where(eq(rsvps.eventId, id))
@@ -84,13 +100,23 @@ export default async function EventDetail({
             {yesCount} going{row.capacity != null ? ` / ${row.capacity}` : ""}
           </div>
         </div>
-        <RsvpControl eventId={row.id} initial={myRsvp?.status ?? null} full={full} />
-        {guests.length > 0 ? (
+        <GuestNameGate
+          actorKind={actor?.kind ?? "guest"}
+          initialName={actor?.kind === "guest" ? actor.displayName : null}
+        />
+        <RsvpControl
+          eventId={row.id}
+          initial={myRsvp?.status ?? null}
+          full={full}
+          actorKind={actor?.kind ?? "guest"}
+          initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
+        />
+        {guestList.length > 0 ? (
           <ul className="pt-2 text-xs text-[color:var(--muted)] space-y-0.5">
-            {guests
+            {guestList
               .filter((g) => g.status === "yes")
               .map((g, i) => (
-                <li key={i}>· {g.name ?? "someone"}</li>
+                <li key={i}>· {g.name ?? g.guestName ?? "someone"}</li>
               ))}
           </ul>
         ) : null}
@@ -103,7 +129,13 @@ export default async function EventDetail({
             Live — anyone can add or claim
           </span>
         </div>
-        <BringList eventId={row.id} currentUserId={session.user.id} />
+        <BringList
+          eventId={row.id}
+          actorKind={actor?.kind ?? "guest"}
+          userId={actor?.kind === "user" ? actor.userId : null}
+          guestId={actor?.kind === "guest" ? actor.guestId : null}
+          initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
+        />
       </section>
     </article>
   );

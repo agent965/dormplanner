@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const DIETARY_TAGS = [
@@ -23,26 +24,41 @@ type Item = {
   quantity: number;
   tags: Tag[];
   note: string | null;
-  claimedById: string | null;
+  createdByName: string;
+  createdById: string | null;
+  createdByGuestId: string | null;
   claimedByName: string | null;
-  createdById: string;
+  claimedById: string | null;
+  claimedByGuestId: string | null;
   updatedAt: string;
 };
 
-export function BringList({
-  eventId,
-  currentUserId,
-}: {
+type Props = {
   eventId: string;
-  currentUserId: string;
-}) {
+  actorKind: "user" | "guest";
+  userId: string | null;
+  guestId: string | null;
+  initialGuestName: string | null;
+};
+
+export function BringList({ eventId, actorKind, userId, guestId, initialGuestName }: Props) {
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [qty, setQty] = useState(1);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
+
+  const needsName = actorKind === "guest" && !initialGuestName;
+
+  const mine = (row: { createdById: string | null; createdByGuestId: string | null }) =>
+    actorKind === "user" ? row.createdById === userId : row.createdByGuestId === guestId;
+
+  const minesClaim = (row: { claimedById: string | null; claimedByGuestId: string | null }) =>
+    actorKind === "user" ? row.claimedById === userId : row.claimedByGuestId === guestId;
 
   async function refresh() {
     try {
@@ -70,13 +86,27 @@ export function BringList({
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
+    if (needsName) {
+      setError("Set your name above first.");
+      return;
+    }
     setAdding(true);
+    setError(null);
     try {
-      await fetch(`/api/events/${eventId}/items`, {
+      const r = await fetch(`/api/events/${eventId}/items`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: name.trim(), quantity: qty, tags }),
       });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        setError(
+          data?.error === "name_required"
+            ? "Set your name above first."
+            : "Could not add item."
+        );
+        return;
+      }
       setName("");
       setQty(1);
       setTags([]);
@@ -87,11 +117,21 @@ export function BringList({
   }
 
   async function patch(itemId: string, body: object) {
-    await fetch(`/api/events/${eventId}/items/${itemId}`, {
+    if (needsName) {
+      setError("Set your name above first.");
+      return;
+    }
+    const r = await fetch(`/api/events/${eventId}/items/${itemId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      if (data?.error === "name_required") {
+        setError("Set your name above first.");
+      }
+    }
     refresh();
   }
 
@@ -109,8 +149,8 @@ export function BringList({
           </li>
         ) : (
           items.map((item) => {
-            const mine = item.claimedById === currentUserId;
-            const claimed = !!item.claimedById;
+            const myClaim = minesClaim(item);
+            const claimed = !!(item.claimedById || item.claimedByGuestId);
             return (
               <li
                 key={item.id}
@@ -138,15 +178,17 @@ export function BringList({
                       </span>
                     ))}
                   </div>
-                  {item.claimedByName ? (
-                    <div className="mt-1 text-xs text-[color:var(--muted)]">
-                      {mine ? "You've" : `${item.claimedByName} has`} got this
-                    </div>
-                  ) : null}
+                  <div className="mt-1 text-xs text-[color:var(--muted)]">
+                    {claimed
+                      ? myClaim
+                        ? "You've got this"
+                        : `${item.claimedByName} has this`
+                      : `Added by ${item.createdByName}`}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {claimed ? (
-                    mine ? (
+                    myClaim ? (
                       <button
                         onClick={() => patch(item.id, { action: "unclaim" })}
                         className="text-xs px-2 py-1 rounded border border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
@@ -162,7 +204,7 @@ export function BringList({
                       I'll bring it
                     </button>
                   )}
-                  {item.createdById === currentUserId ? (
+                  {mine(item) ? (
                     <button
                       onClick={() => {
                         if (confirm(`Remove "${item.name}"?`)) patch(item.id, { action: "delete" });
@@ -225,6 +267,7 @@ export function BringList({
             </button>
           ))}
         </div>
+        {error ? <p className="text-xs text-[color:var(--danger)]">{error}</p> : null}
       </form>
     </div>
   );

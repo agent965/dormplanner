@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -107,24 +107,32 @@ export const events = pgTable(
   ]
 );
 
-// RSVPs
+// RSVPs — either a signed-in user OR a guest (cookie + typed name)
 export const rsvps = pgTable(
   "rsvps",
   {
+    id: text("id").primaryKey(),
     eventId: text("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+    guestId: text("guest_id"),
+    guestName: text("guest_name"),
     status: rsvpStatus("status").notNull(),
     note: text("note"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.eventId, t.userId] })]
+  (t) => [
+    uniqueIndex("rsvps_event_user_uidx")
+      .on(t.eventId, t.userId)
+      .where(sql`${t.userId} IS NOT NULL`),
+    uniqueIndex("rsvps_event_guest_uidx")
+      .on(t.eventId, t.guestId)
+      .where(sql`${t.guestId} IS NOT NULL`),
+  ]
 );
 
-// Collaborative "what to bring" list
+// Collaborative "what to bring" list — created/claimed by user OR guest
 export const bringItems = pgTable(
   "bring_items",
   {
@@ -135,13 +143,19 @@ export const bringItems = pgTable(
     name: text("name").notNull(),
     quantity: integer("quantity").notNull().default(1),
     tags: dietaryTag("tags").array().notNull().default([]),
+    note: text("note"),
+    // Who created it — display name always stored, plus one of user/guest identity
+    createdByName: text("created_by_name").notNull(),
+    createdById: text("created_by_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdByGuestId: text("created_by_guest_id"),
+    // Who claimed it (nullable — nobody until claimed)
+    claimedByName: text("claimed_by_name"),
     claimedById: text("claimed_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    note: text("note"),
-    createdById: text("created_by_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    claimedByGuestId: text("claimed_by_guest_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -188,8 +202,6 @@ export const rsvpsRelations = relations(rsvps, ({ one }) => ({
 
 export const bringItemsRelations = relations(bringItems, ({ one }) => ({
   event: one(events, { fields: [bringItems.eventId], references: [events.id] }),
-  claimedBy: one(users, { fields: [bringItems.claimedById], references: [users.id] }),
-  createdBy: one(users, { fields: [bringItems.createdById], references: [users.id] }),
 }));
 
 export type DietaryTag = (typeof dietaryTag.enumValues)[number];

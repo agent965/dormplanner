@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { db } from "./index";
 import { dorms } from "./schema";
 import { UW_DORMS } from "../dorms";
