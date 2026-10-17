@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fafaf7;
+  --foreground: #1a1a1a;
+  --surface: #ffffff;
+  --border: #e7e5df;
+  --muted: #6b6b6b;
+  --husky-purple: #4b2e83;
+  --husky-gold: #b7a57a;
+  --accent: #4b2e83;
+  --accent-fg: #ffffff;
+  --danger: #c0392b;
+  --success: #2d7a4d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-husky-purple: var(--husky-purple);
+  --color-husky-gold: var(--husky-gold);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d0b14;
+    --foreground: #ededed;
+    --surface: #16131f;
+    --border: #2a2535;
+    --muted: #9a93a8;
+    --accent: #8a6cc9;
+    --accent-fg: #ffffff;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Small utility: tag chips */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--husky-purple) 10%, transparent);
+  color: var(--husky-purple);
+  border: 1px solid color-mix(in srgb, var(--husky-purple) 20%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .tag {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: #c9b6ff;
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+}
