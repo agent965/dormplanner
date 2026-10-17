@@ -25,7 +25,7 @@ export default async function DormFeed({
       location: events.location,
       dormSlug: events.dormSlug,
       capacity: events.capacity,
-      hostName: users.name,
+      hostName: users.username,
       rsvpYesCount: sql<number>`(
         select count(*)::int from ${rsvps}
         where ${rsvps.eventId} = ${events.id} and ${rsvps.status} = 'yes'

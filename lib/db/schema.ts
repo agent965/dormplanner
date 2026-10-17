@@ -8,7 +8,6 @@ import {
   pgEnum,
   uniqueIndex,
   index,
-  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const rsvpStatus = pgEnum("rsvp_status", ["yes", "maybe", "no"]);
@@ -25,56 +24,15 @@ export const dietaryTag = pgEnum("dietary_tag", [
   "contains_alcohol",
 ]);
 
-// Users (populated by Auth.js on first sign-in)
+// Users — simple username + bcrypt password (no OAuth)
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  emailVerified: timestamp("email_verified", { withTimezone: true }),
-  name: text("name"),
-  image: text("image"),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
   dormSlug: text("dorm_slug"),
   floor: text("floor"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
-
-// Auth.js tables
-export const accounts = pgTable(
-  "accounts",
-  {
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("provider_account_id").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
-  },
-  (t) => [primaryKey({ columns: [t.provider, t.providerAccountId] })]
-);
-
-export const sessions = pgTable("sessions", {
-  sessionToken: text("session_token").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { withTimezone: true }).notNull(),
-});
-
-export const verificationTokens = pgTable(
-  "verification_tokens",
-  {
-    identifier: text("identifier").notNull(),
-    token: text("token").notNull(),
-    expires: timestamp("expires", { withTimezone: true }).notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.identifier, t.token] })]
-);
 
 // Dorms (seeded)
 export const dorms = pgTable("dorms", {
@@ -144,13 +102,11 @@ export const bringItems = pgTable(
     quantity: integer("quantity").notNull().default(1),
     tags: dietaryTag("tags").array().notNull().default([]),
     note: text("note"),
-    // Who created it — display name always stored, plus one of user/guest identity
     createdByName: text("created_by_name").notNull(),
     createdById: text("created_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
     createdByGuestId: text("created_by_guest_id"),
-    // Who claimed it (nullable — nobody until claimed)
     claimedByName: text("claimed_by_name"),
     claimedById: text("claimed_by_id").references(() => users.id, {
       onDelete: "set null",
@@ -162,7 +118,7 @@ export const bringItems = pgTable(
   (t) => [index("bring_items_event_idx").on(t.eventId)]
 );
 
-// Leftovers board (post-event or ad-hoc "free food" posts)
+// Leftovers board
 export const leftovers = pgTable(
   "leftovers",
   {
@@ -185,7 +141,6 @@ export const leftovers = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   hostedEvents: many(events),
   rsvps: many(rsvps),
-  bringItems: many(bringItems),
 }));
 
 export const eventsRelations = relations(events, ({ one, many }) => ({

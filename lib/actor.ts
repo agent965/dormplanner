@@ -13,7 +13,7 @@ export async function readActor(): Promise<Actor | null> {
     return {
       kind: "user",
       userId: session.user.id,
-      displayName: session.user.name ?? session.user.email ?? "someone",
+      displayName: session.user.name ?? "someone",
     };
   }
   const guest = await readGuest();
@@ -28,7 +28,7 @@ export async function ensureActor(): Promise<Actor> {
     return {
       kind: "user",
       userId: session.user.id,
-      displayName: session.user.name ?? session.user.email ?? "someone",
+      displayName: session.user.name ?? "someone",
     };
   }
   const guest = await ensureGuest();

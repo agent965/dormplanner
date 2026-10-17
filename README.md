@@ -6,7 +6,8 @@ or dorm RSVP, and everyone shares a live, editable "what to bring" list.
 
 ## What's in v1
 
-- `@uw.edu` Google sign-in
+- **Guest RSVPs** — no account needed, just type your name once
+- Username + password accounts for **hosts** (who create events)
 - Dorm + floor profile; feed defaults to your dorm
 - Event creation with templates (potluck, pizza, study break, cooking night…)
 - RSVP (yes / maybe / can't) with capacity cap
@@ -17,7 +18,7 @@ or dorm RSVP, and everyone shares a live, editable "what to bring" list.
 
 - **Next.js 16** (App Router) + TypeScript + Tailwind v4
 - **Drizzle ORM** → TigerData Postgres
-- **Auth.js (NextAuth v5)** with Google OAuth, email-domain gate
+- **Auth.js (NextAuth v5)** with Credentials provider (username + bcrypt password, JWT sessions)
 
 ## Setup
 
@@ -28,27 +29,17 @@ npm install
 # 2. configure env — copy .env.example and fill in
 cp .env.example .env.local
 #   DATABASE_URL  — your TigerData service URI
-#   AUTH_SECRET   — openssl rand -base64 32
-#   AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET  — Google Cloud Console
-#   ALLOWED_EMAIL_DOMAIN=uw.edu
+#   AUTH_SECRET   — node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-# 3. push schema to Postgres + seed dorms
-npm run db:push
+# 3. migrate schema + seed dorms
+npm run db:migrate
 npm run db:seed
 
 # 4. run
 npm run dev
 ```
 
-Open http://localhost:3000.
-
-### Google OAuth setup
-
-1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials**
-2. Create **OAuth client ID** → Web application
-3. Authorized redirect URI (dev): `http://localhost:3000/api/auth/callback/google`
-4. Authorized redirect URI (prod): `https://<your-domain>/api/auth/callback/google`
-5. Copy client ID + secret into `.env.local`
+Open http://localhost:3000. Browse events + RSVP as a guest, or hit **Sign in to host → Create one** to make a host account.
 
 ## Deploy
 

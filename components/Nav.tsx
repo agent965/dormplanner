@@ -21,6 +21,9 @@ export function Nav({ user }: { user: NavUser }) {
               <Link href="/events/new" className="hover:underline">
                 New event
               </Link>
+              <span className="text-xs text-[color:var(--muted)]">
+                {user.name ? `@${user.name}` : ""}
+              </span>
               <form
                 action={async () => {
                   "use server";
@@ -30,7 +33,6 @@ export function Nav({ user }: { user: NavUser }) {
                 <button
                   type="submit"
                   className="text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
-                  title={user.email ?? undefined}
                 >
                   Sign out
                 </button>

@@ -1,20 +1,5 @@
 CREATE TYPE "public"."dietary_tag" AS ENUM('vegetarian', 'vegan', 'gluten_free', 'dairy_free', 'nut_free', 'halal', 'kosher', 'contains_pork', 'contains_alcohol');--> statement-breakpoint
 CREATE TYPE "public"."rsvp_status" AS ENUM('yes', 'maybe', 'no');--> statement-breakpoint
-CREATE TABLE "accounts" (
-	"user_id" text NOT NULL,
-	"type" text NOT NULL,
-	"provider" text NOT NULL,
-	"provider_account_id" text NOT NULL,
-	"refresh_token" text,
-	"access_token" text,
-	"expires_at" integer,
-	"token_type" text,
-	"scope" text,
-	"id_token" text,
-	"session_state" text,
-	CONSTRAINT "accounts_provider_provider_account_id_pk" PRIMARY KEY("provider","provider_account_id")
-);
---> statement-breakpoint
 CREATE TABLE "bring_items" (
 	"id" text PRIMARY KEY NOT NULL,
 	"event_id" text NOT NULL,
@@ -75,32 +60,16 @@ CREATE TABLE "rsvps" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "sessions" (
-	"session_token" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
-	"expires" timestamp with time zone NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
-	"email" text NOT NULL,
-	"email_verified" timestamp with time zone,
-	"name" text,
-	"image" text,
+	"username" text NOT NULL,
+	"password_hash" text NOT NULL,
 	"dorm_slug" text,
 	"floor" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
+	CONSTRAINT "users_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
-CREATE TABLE "verification_tokens" (
-	"identifier" text NOT NULL,
-	"token" text NOT NULL,
-	"expires" timestamp with time zone NOT NULL,
-	CONSTRAINT "verification_tokens_identifier_token_pk" PRIMARY KEY("identifier","token")
-);
---> statement-breakpoint
-ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bring_items" ADD CONSTRAINT "bring_items_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bring_items" ADD CONSTRAINT "bring_items_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bring_items" ADD CONSTRAINT "bring_items_claimed_by_id_users_id_fk" FOREIGN KEY ("claimed_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -111,7 +80,6 @@ ALTER TABLE "leftovers" ADD CONSTRAINT "leftovers_posted_by_id_users_id_fk" FORE
 ALTER TABLE "leftovers" ADD CONSTRAINT "leftovers_dorm_slug_dorms_slug_fk" FOREIGN KEY ("dorm_slug") REFERENCES "public"."dorms"("slug") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rsvps" ADD CONSTRAINT "rsvps_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rsvps" ADD CONSTRAINT "rsvps_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "bring_items_event_idx" ON "bring_items" USING btree ("event_id");--> statement-breakpoint
 CREATE INDEX "events_dorm_idx" ON "events" USING btree ("dorm_slug");--> statement-breakpoint
 CREATE INDEX "events_starts_at_idx" ON "events" USING btree ("starts_at");--> statement-breakpoint

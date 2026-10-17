@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 async function main() {
   const [me] = await db.select().from(users).limit(1);
   if (!me) {
-    console.error("No users yet. Sign in once at /signin, then re-run this.");
+    console.error("No users yet. Create an account at /signup, then re-run this.");
     process.exit(1);
   }
 
@@ -89,7 +89,7 @@ async function main() {
         name: it.name,
         quantity: it.quantity,
         tags: [...it.tags],
-        createdByName: me.name ?? "Host",
+        createdByName: me.username,
         createdById: me.id,
       });
     }

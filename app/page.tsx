@@ -14,7 +14,7 @@ export default async function Home() {
   const me = session?.user?.id
     ? (
         await db
-          .select({ dormSlug: users.dormSlug, floor: users.floor, name: users.name })
+          .select({ dormSlug: users.dormSlug, floor: users.floor, name: users.username })
           .from(users)
           .where(eq(users.id, session.user.id))
       )[0] ?? null
@@ -38,7 +38,7 @@ export default async function Home() {
       location: events.location,
       dormSlug: events.dormSlug,
       capacity: events.capacity,
-      hostName: users.name,
+      hostName: users.username,
       rsvpYesCount: sql<number>`(
         select count(*)::int from ${rsvps}
         where ${rsvps.eventId} = ${events.id} and ${rsvps.status} = 'yes'

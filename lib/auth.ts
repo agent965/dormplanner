@@ -1,53 +1,50 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import {
-  users,
-  accounts,
-  sessions,
-  verificationTokens,
-} from "@/lib/db/schema";
-
-const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN?.trim();
+import { users } from "@/lib/db/schema";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      authorization: {
-        params: {
-          // Google will show the account chooser only inside the chosen domain
-          // when hd is set. We still re-check below.
-          hd: allowedDomain || undefined,
-          prompt: "select_account",
-        },
-      },
-    }),
-  ],
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/signin",
   },
+  providers: [
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(creds) {
+        const username = String(creds?.username ?? "").trim().toLowerCase();
+        const password = String(creds?.password ?? "");
+        if (!username || !password) return null;
+        const [u] = await db
+          .select()
+          .from(users)
+          .where(eq(users.username, username))
+          .limit(1);
+        if (!u) return null;
+        const ok = await bcrypt.compare(password, u.passwordHash);
+        if (!ok) return null;
+        return { id: u.id, name: u.username };
+      },
+    }),
+  ],
   callbacks: {
-    async signIn({ profile, user }) {
-      const email = profile?.email ?? user?.email;
-      if (!email) return false;
-      if (allowedDomain && !email.toLowerCase().endsWith(`@${allowedDomain}`)) {
-        return false;
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id as string;
+        token.username = user.name ?? undefined;
       }
-      return true;
+      return token;
     },
-    async session({ session, user }) {
-      if (session.user && user?.id) {
-        session.user.id = user.id;
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+        if (token.username) session.user.name = String(token.username);
       }
       return session;
     },

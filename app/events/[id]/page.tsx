@@ -30,7 +30,7 @@ export default async function EventDetail({
       capacity: events.capacity,
       openToAllDorms: events.openToAllDorms,
       hostId: events.hostId,
-      hostName: users.name,
+      hostName: users.username,
     })
     .from(events)
     .leftJoin(users, eq(events.hostId, users.id))
@@ -65,7 +65,7 @@ export default async function EventDetail({
 
   const guestList = await db
     .select({
-      name: users.name,
+      name: users.username,
       guestName: rsvps.guestName,
       status: rsvps.status,
     })
