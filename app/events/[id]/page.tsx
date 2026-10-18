@@ -162,7 +162,7 @@ export default async function EventDetail({
               renderGuestBubble(
                 g,
                 `yes-${i}`,
-                "bg-[#007FFF] text-white border border-[#007FFF]"
+                "bg-[color:var(--crust)] text-white border border-[color:var(--crust)]"
               )
             )}
             {maybeList.map((g, i) =>
