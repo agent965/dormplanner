@@ -46,8 +46,17 @@ export function BringList({
 
   const needsName = actorKind === "guest" && !initialGuestName;
 
-  const minesClaim = (row: { claimedById: string | null; claimedByGuestId: string | null }) =>
-    actorKind === "user" ? row.claimedById === userId : row.claimedByGuestId === guestId;
+  const minesClaim = (row: {
+    claimedById: string | null;
+    claimedByGuestId: string | null;
+  }) => {
+    if (actorKind === "user") {
+      return !!userId && row.claimedById === userId;
+    }
+    // Guests without a cookie yet have guestId=null — don't let that match
+    // other null values (items claimed by signed-in users).
+    return !!guestId && row.claimedByGuestId === guestId;
+  };
 
   async function refresh() {
     try {

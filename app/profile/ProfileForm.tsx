@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { AvatarCropper } from "@/components/AvatarCropper";
 import { UW_CAMPUSES, UW_YEARS } from "@/lib/profile";
 import { UW_DORMS } from "@/lib/dorms";
-import { fileToAvatarDataUrl } from "@/lib/image";
+import { fileToDataUrl } from "@/lib/image";
 
 type Initial = {
   username: string;
@@ -32,6 +33,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [dormSlug, setDormSlug] = useState(initial.dormSlug ?? "");
   const [floor, setFloor] = useState(initial.floor ?? "");
   const [avatar, setAvatar] = useState<string | null>(initial.avatar);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,8 +45,8 @@ export function ProfileForm({ initial }: { initial: Initial }) {
     setAvatarBusy(true);
     setError(null);
     try {
-      const url = await fileToAvatarDataUrl(file);
-      setAvatar(url);
+      const url = await fileToDataUrl(file);
+      setCropSrc(url); // open the cropper modal
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read that image.");
     } finally {
@@ -89,6 +91,17 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const displayFallback = displayName || initial.username;
 
   return (
+    <>
+      {cropSrc ? (
+        <AvatarCropper
+          imageSrc={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onSave={(url) => {
+            setAvatar(url);
+            setCropSrc(null);
+          }}
+        />
+      ) : null}
     <form onSubmit={submit} className="card p-5 space-y-5">
       {/* Avatar */}
       <div className="flex items-center gap-4">
@@ -239,6 +252,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         </button>
       </div>
     </form>
+    </>
   );
 }
 

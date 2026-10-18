@@ -1,59 +1,63 @@
-// Client-side avatar helper: resize an uploaded image file to a square JPEG
-// data URL that fits comfortably in a TEXT column. Keeps everything in-browser,
-// no upload service needed for the hackathon.
+// Client-side avatar helpers: read a File into a data URL for the cropper,
+// then render the user's chosen crop area into a resized JPEG that fits in a
+// TEXT column. Everything stays in-browser.
 
 const MAX_DIM = 256;
 const QUALITY = 0.82;
+const MAX_LEN = 200_000;
 
-export async function fileToAvatarDataUrl(file: File): Promise<string> {
+/** Read a File into a data URL (used to feed the cropper UI). */
+export async function fileToDataUrl(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) {
     throw new Error("Please choose an image file.");
   }
-  const bitmap = await loadBitmap(file);
-  const { canvas, ctx } = makeSquareCanvas(bitmap, MAX_DIM);
+  return new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("Could not read that image."));
+    r.readAsDataURL(file);
+  });
+}
+
+export type CropArea = { x: number; y: number; width: number; height: number };
+
+/**
+ * Draw the chosen crop area of `imageSrc` into a 256×256 JPEG data URL.
+ * `crop` is in the original image's pixel space (what react-easy-crop returns
+ * from onCropComplete as croppedAreaPixels).
+ */
+export async function cropToAvatarDataUrl(imageSrc: string, crop: CropArea): Promise<string> {
+  const img = await loadImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  canvas.width = MAX_DIM;
+  canvas.height = MAX_DIM;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported in this browser.");
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(
-    bitmap,
-    ...cropToSquare(bitmap),
+    img,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
     0,
     0,
     MAX_DIM,
     MAX_DIM
   );
   const dataUrl = canvas.toDataURL("image/jpeg", QUALITY);
-  if (dataUrl.length > 200_000) {
+  if (dataUrl.length > MAX_LEN) {
     throw new Error("Image is too large even after resizing. Try a smaller file.");
   }
   return dataUrl;
 }
 
-async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
-  if (typeof createImageBitmap === "function") {
-    try {
-      return await createImageBitmap(file);
-    } catch {}
-  }
-  return new Promise<HTMLImageElement>((resolve, reject) => {
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error("Could not read that image."));
-    img.src = URL.createObjectURL(file);
+    img.src = src;
   });
-}
-
-function makeSquareCanvas(_src: ImageBitmap | HTMLImageElement, size: number) {
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas not supported in this browser.");
-  return { canvas, ctx };
-}
-
-function cropToSquare(src: ImageBitmap | HTMLImageElement): [number, number, number, number] {
-  const w = "width" in src ? src.width : (src as HTMLImageElement).naturalWidth;
-  const h = "height" in src ? src.height : (src as HTMLImageElement).naturalHeight;
-  const side = Math.min(w, h);
-  const sx = Math.floor((w - side) / 2);
-  const sy = Math.floor((h - side) / 2);
-  return [sx, sy, side, side];
 }
