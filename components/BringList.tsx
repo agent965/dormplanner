@@ -210,7 +210,19 @@ export function BringList({
                   {claimed ? (
                     myClaim || isHost ? (
                       <button
-                        onClick={() => patch(item.id, { action: "unclaim" })}
+                        onClick={() => {
+                          if (!myClaim && isHost) {
+                            const who = item.claimedByName ?? "someone";
+                            if (
+                              !confirm(
+                                `Are you sure? This will remove ${who}'s claim on "${item.name}".`
+                              )
+                            ) {
+                              return;
+                            }
+                          }
+                          patch(item.id, { action: "unclaim" });
+                        }}
                         className="text-xs px-2 py-1 rounded border border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
                       >
                         Unclaim
