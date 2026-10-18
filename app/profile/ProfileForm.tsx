@@ -82,6 +82,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         return;
       }
       setSaved(true);
+      router.push(`/users/${encodeURIComponent(initial.username)}`);
       router.refresh();
     } finally {
       setSaving(false);

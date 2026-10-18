@@ -15,6 +15,7 @@ export function ProfileStatsBar({
   username,
   targetUserId,
   initialFriendsCount,
+  incomingRequestsCount = 0,
   eventsAttendedCount,
   isMe,
   isSignedIn,
@@ -23,6 +24,7 @@ export function ProfileStatsBar({
   username: string;
   targetUserId: string | null;
   initialFriendsCount: number;
+  incomingRequestsCount?: number;
   eventsAttendedCount: number;
   isMe: boolean;
   isSignedIn: boolean;
@@ -95,6 +97,26 @@ export function ProfileStatsBar({
     }
   }
 
+  function handleEventsAttendedClick() {
+    const historyEl = document.getElementById("profile-history");
+    if (historyEl) {
+      const rect = historyEl.getBoundingClientRect();
+      const targetTop = window.scrollY + rect.top;
+      const maxScroll = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight
+      );
+      window.scrollTo({
+        top: Math.min(targetTop, maxScroll),
+        behavior: "smooth",
+      });
+    } else {
+      router.push(`/users/${encodeURIComponent(username)}#profile-history`);
+    }
+  }
+
+  const showRedDot = isMe && incomingRequestsCount > 0;
+
   return (
     <div className="space-y-3">
       {/* Bar beneath the profile card */}
@@ -103,21 +125,32 @@ export function ProfileStatsBar({
           href={`/users/${encodeURIComponent(username)}/friends`}
           className="flex flex-col items-center justify-center py-3 px-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
         >
-          <span className="text-lg font-semibold leading-tight">
-            {friendsCount}
+          <span className="inline-flex items-center gap-1.5 text-lg font-semibold leading-tight">
+            <span>{friendsCount}</span>
+            {showRedDot ? (
+              <span
+                className="w-2.5 h-2.5 rounded-full bg-[#dc2626] inline-block shrink-0"
+                title={`${incomingRequestsCount} incoming friend ${incomingRequestsCount === 1 ? "request" : "requests"}`}
+                aria-label={`${incomingRequestsCount} incoming friend ${incomingRequestsCount === 1 ? "request" : "requests"}`}
+              />
+            ) : null}
           </span>
           <span className="text-xs text-[color:var(--muted)] font-medium">
             Friends
           </span>
         </Link>
-        <div className="flex flex-col items-center justify-center py-3 px-4">
+        <button
+          type="button"
+          onClick={handleEventsAttendedClick}
+          className="flex flex-col items-center justify-center py-3 px-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+        >
           <span className="text-lg font-semibold leading-tight">
             {eventsAttendedCount}
           </span>
           <span className="text-xs text-[color:var(--muted)] font-medium">
             Events attended
           </span>
-        </div>
+        </button>
       </div>
 
       {/* Add friend / Unfriend button centered below the bar on another user's profile */}

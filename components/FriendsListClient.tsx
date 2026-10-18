@@ -283,11 +283,16 @@ export function FriendsListClient({
                     className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar
-                        src={req.avatar}
-                        name={req.displayName}
-                        size={44}
-                      />
+                      <Link
+                        href={`/users/${encodeURIComponent(req.username)}`}
+                        className="shrink-0"
+                      >
+                        <Avatar
+                          src={req.avatar}
+                          name={req.displayName}
+                          size={44}
+                        />
+                      </Link>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Link
@@ -365,11 +370,16 @@ export function FriendsListClient({
                 className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Avatar
-                    src={friend.avatar}
-                    name={friend.displayName}
-                    size={44}
-                  />
+                  <Link
+                    href={`/users/${encodeURIComponent(friend.username)}`}
+                    className="shrink-0"
+                  >
+                    <Avatar
+                      src={friend.avatar}
+                      name={friend.displayName}
+                      size={44}
+                    />
+                  </Link>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Link

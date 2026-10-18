@@ -68,6 +68,17 @@ export async function getProfileStats(userId: string, username: string) {
       )
     );
 
+  // Incoming pending friend requests count for this user
+  const incomingRows = await db
+    .select({ id: friendships.id })
+    .from(friendships)
+    .where(
+      and(
+        eq(friendships.status, "pending"),
+        eq(friendships.addresseeId, userId)
+      )
+    );
+
   // Past events where user said "yes" (attendeeUsernames) or hosted
   const pastRows = await db
     .select({
@@ -105,6 +116,7 @@ export async function getProfileStats(userId: string, username: string) {
 
   return {
     friendsCount: friendRows.length,
+    incomingRequestsCount: incomingRows.length,
     eventsAttendedCount: attendedEventIds.size,
   };
 }

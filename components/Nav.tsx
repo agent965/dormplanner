@@ -40,7 +40,7 @@ export function Nav({ user }: { user: NavUser }) {
             <>
               {user.name ? (
                 <Link
-                  href="/profile"
+                  href={`/users/${encodeURIComponent(user.name)}`}
                   className="text-xs text-[color:var(--muted)] hover:text-[color:var(--foreground)] hover:underline"
                 >
                   @{user.name}

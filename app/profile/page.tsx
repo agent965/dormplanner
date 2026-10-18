@@ -46,6 +46,7 @@ export default async function EditProfilePage() {
         username={me.username}
         targetUserId={me.id}
         initialFriendsCount={stats.friendsCount}
+        incomingRequestsCount={stats.incomingRequestsCount}
         eventsAttendedCount={stats.eventsAttendedCount}
         isMe={true}
         isSignedIn={true}
