@@ -147,14 +147,6 @@ export default async function UserProfilePage({
               </p>
             )}
           </div>
-          {isMe ? (
-            <Link
-              href="/profile"
-              className="text-sm px-3 py-1.5 rounded-full border border-[color:var(--husky-purple)] text-[color:var(--husky-purple)] font-semibold hover:bg-[color:var(--husky-purple)] hover:text-white transition-colors"
-            >
-              Edit profile
-            </Link>
-          ) : null}
         </div>
       </section>
 
