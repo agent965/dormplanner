@@ -35,6 +35,8 @@ export type EventCardProps = {
   lookingForIngredients?: boolean | null;
   lookingForCookware?: boolean | null;
   visibility?: string | null;
+  openToAllDorms?: boolean | null;
+  hostFloor?: string | null;
   canceled?: boolean | null;
   pinned?: boolean;
   onTogglePin?: (id: string) => void;

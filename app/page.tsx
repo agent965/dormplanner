@@ -5,9 +5,7 @@ import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
-import { DormPicker } from "@/components/DormPicker";
 import { LandingHero } from "@/components/LandingHero";
-import { dormName } from "@/lib/dorms";
 import { getFriendIds, visibleEventsCondition } from "@/lib/friends";
 
 export const dynamic = "force-dynamic";
@@ -30,21 +28,10 @@ export default async function Home() {
 
   const notEnded = sql`COALESCE(${events.endsAt}, ${events.startsAt} + interval '2 hours') > now()`;
   // Friends-only events: visible only to the host and the host's friends
-  // (regardless of dorm). Public events keep the existing dorm rules.
+  // (regardless of dorm). Public events are visible to all.
   const friendIds = await getFriendIds(session.user.id);
   const visible = visibleEventsCondition(session.user.id, friendIds);
-  // Signed-in with a dorm: show that dorm + open-to-all. Otherwise show everything.
-  const whereClause = me?.dormSlug
-    ? and(
-        notEnded,
-        visible,
-        or(
-          eq(events.visibility, "friends"),
-          eq(events.dormSlug, me.dormSlug),
-          eq(events.openToAllDorms, true)
-        )
-      )
-    : and(notEnded, visible);
+  const whereClause = and(notEnded, visible);
 
   const rows = await db
     .select({
@@ -55,6 +42,7 @@ export default async function Home() {
       endsAt: events.endsAt,
       location: events.location,
       dormSlug: events.dormSlug,
+      openToAllDorms: events.openToAllDorms,
       capacity: events.capacity,
       tags: events.tags,
       plannedDishes: events.plannedDishes,
@@ -65,6 +53,7 @@ export default async function Home() {
       visibility: events.visibility,
       canceled: events.canceled,
       hostName: users.username,
+      hostFloor: users.floor,
       rsvpYesCount: sql<number>`(
         select count(*)::int from ${rsvps}
         where ${rsvps.eventId} = ${events.id} and ${rsvps.status} = 'yes'
@@ -74,7 +63,7 @@ export default async function Home() {
     .leftJoin(users, eq(events.hostId, users.id))
     .where(whereClause)
     .orderBy(events.canceled, events.startsAt, sql`lower(${events.title})`)
-    .limit(50);
+    .limit(100);
 
   const rsvpRows =
     rows.length > 0
@@ -125,7 +114,9 @@ export default async function Home() {
       endsAt: e.endsAt ? new Date(e.endsAt).toISOString() : null,
       location: e.location,
       dormSlug: e.dormSlug,
+      openToAllDorms: e.openToAllDorms,
       hostName: e.hostName,
+      hostFloor: e.hostFloor,
       rsvpYesCount: e.rsvpYesCount,
       capacity: e.capacity,
       tags: e.tags,
@@ -153,20 +144,13 @@ export default async function Home() {
             "0 2px 0 color-mix(in srgb, var(--crust) 40%, transparent), 0 10px 30px -8px color-mix(in srgb, var(--crust) 25%, transparent)",
         }}
       >
-        <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-semibold display">
               Hey {me?.name?.split(" ")[0] ?? "there"}, hungry?
             </h1>
-            <p className="mt-1.5 text-sm text-[color:var(--muted)] max-w-md">
-              {me?.dormSlug ? (
-                <>
-                  Showing events in <strong className="text-[color:var(--foreground)]">{dormName(me.dormSlug)}</strong>
-                  {me.floor ? ` · floor ${me.floor}` : ""} plus anything open to all dorms.
-                </>
-              ) : (
-                "Pick your dorm below to filter the feed."
-              )}
+            <p className="mt-1 text-sm text-[color:var(--muted)]">
+              Plan, join, and delegate responsibility to escape the Dining Hall, together!
             </p>
           </div>
           <Link
@@ -177,15 +161,14 @@ export default async function Home() {
             New event
           </Link>
         </div>
-        <div className="mt-4 pt-4 border-t border-[color:var(--border)]">
-          <DormPicker
-            currentDormSlug={me?.dormSlug ?? null}
-            currentFloor={me?.floor ?? null}
-          />
-        </div>
       </section>
 
-      <EventFeed events={serializedEvents} canCreate={!!me} />
+      <EventFeed
+        events={serializedEvents}
+        canCreate={!!me}
+        userDormSlug={me?.dormSlug ?? null}
+        userFloor={me?.floor ?? null}
+      />
     </div>
   );
 }

@@ -292,13 +292,13 @@ export function PlannedDishesEditor({
     <div className="space-y-2 rounded-lg border border-[color:var(--border)] p-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[color:var(--muted)] uppercase tracking-wide">
-          Planned dishes
+          Plans
         </span>
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
-          aria-label={expanded ? "Collapse planned dishes form" : "Expand planned dishes form"}
-          title={expanded ? "Collapse" : "Add a planned dish"}
+          aria-label={expanded ? "Collapse plans form" : "Expand plans form"}
+          title={expanded ? "Collapse" : "Add a plan"}
           className="inline-flex items-center justify-center w-6 h-6 rounded-md border border-[color:var(--border)] hover:border-[color:var(--husky-purple)] text-sm font-bold leading-none cursor-pointer transition-colors"
         >
           +
@@ -325,7 +325,7 @@ export function PlannedDishesEditor({
                 if (fieldError) setFieldError(null);
               }}
               rows={3}
-              placeholder="Recipe/dish name/description"
+              placeholder="Activity Plans or Recipe Plans"
               className="w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
             />
           </div>
