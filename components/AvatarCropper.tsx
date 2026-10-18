@@ -95,7 +95,7 @@ export function AvatarCropper({ imageSrc, onCancel, onSave }: Props) {
             disabled={saving || !area}
             className="btn-primary text-sm disabled:opacity-50"
           >
-            {saving ? "Saving…" : "Use this crop"}
+            {saving ? "Saving…" : "Use"}
           </button>
         </div>
       </div>

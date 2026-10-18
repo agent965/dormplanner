@@ -167,9 +167,19 @@ export default async function Home() {
               )}
             </p>
           </div>
-          <Link href={me ? "/events/new" : "/signin"} className="btn-primary text-sm whitespace-nowrap">
-            {me ? "+ New event" : "Sign in to host"}
-          </Link>
+          {me ? (
+            <Link
+              href="/events/new"
+              className="inline-flex items-center gap-1.5 text-base font-bold px-5 py-2.5 rounded-full bg-[color:var(--crust)] text-white uppercase tracking-wide shadow-[0_4px_0_rgba(0,0,0,0.35)] hover:shadow-[0_5px_0_rgba(0,0,0,0.35)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.35)] transition-all whitespace-nowrap"
+            >
+              <span className="text-xl leading-none">+</span>
+              New event
+            </Link>
+          ) : (
+            <Link href="/signin" className="btn-primary text-sm whitespace-nowrap">
+              Sign in to host
+            </Link>
+          )}
         </div>
         {me ? (
           <div className="relative mt-4 pt-4 border-t border-[color:var(--border)]">
