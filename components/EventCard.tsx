@@ -34,6 +34,7 @@ export type EventCardProps = {
   lookingForCook?: boolean | null;
   lookingForIngredients?: boolean | null;
   lookingForCookware?: boolean | null;
+  visibility?: string | null;
   canceled?: boolean | null;
   pinned?: boolean;
   onTogglePin?: (id: string) => void;
@@ -70,6 +71,9 @@ export function EventCard(e: EventCardProps) {
   if (e.lookingForCook) lookingForLabels.push("Cook");
   if (e.lookingForIngredients) lookingForLabels.push("Buy/Bring Ingredients");
   if (e.lookingForCookware) lookingForLabels.push("Bring Cookware/Utensils");
+
+  // Shared style for inline section labels ("RSVP'd Users:", etc.)
+  const labelClass = "text-xs font-semibold text-[color:var(--foreground)]";
 
   function renderPersonBubble(
     person: RsvpPerson,
@@ -126,6 +130,7 @@ export function EventCard(e: EventCardProps) {
           {e.location ? ` · ${e.location}` : ""}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2">
+          {onTogglePinRender(e.id, !!e.pinned, e.onTogglePin)}
           <h3
             className={cn(
               "text-lg font-semibold",
@@ -134,7 +139,11 @@ export function EventCard(e: EventCardProps) {
           >
             {e.title}
           </h3>
-          {onTogglePinRender(e.id, !!e.pinned, e.onTogglePin)}
+          {e.visibility === "friends" ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-neutral-700 text-white">
+              Friends Only
+            </span>
+          ) : null}
           {e.canceled ? (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[color:var(--danger)] text-white">
               Canceled
@@ -147,9 +156,7 @@ export function EventCard(e: EventCardProps) {
         </div>
         {lookingForLabels.length > 0 ? (
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-[color:var(--muted)] font-medium">
-              Looking for:{" "}
-            </span>
+            <span className={labelClass}>Looking for Someone to Bring: </span>
             {lookingForLabels.map((label) => (
               <span
                 key={label}
@@ -165,6 +172,7 @@ export function EventCard(e: EventCardProps) {
         ) : null}
         {hasRsvpBubbles ? (
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            <span className={labelClass}>RSVP&apos;d Users: </span>
             {going.map((p, i) =>
               renderPersonBubble(
                 p,
@@ -189,7 +197,8 @@ export function EventCard(e: EventCardProps) {
           </div>
         ) : null}
         {e.tags && e.tags.length > 0 ? (
-          <div className="mt-1.5 flex flex-wrap gap-1">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            <span className={labelClass}>Dietary Restrictions: </span>
             {e.tags.map((t) => (
               <span key={t} className={cn("tag", e.canceled && "opacity-60")}>
                 {dietaryTagLabel(t)}
@@ -199,8 +208,12 @@ export function EventCard(e: EventCardProps) {
         ) : null}
         {e.description ? (
           <p className="mt-1 text-sm text-[color:var(--muted)] line-clamp-2">
+            <span className={cn(labelClass, "mr-1")}>Event Description: </span>
             {e.description}
           </p>
+        ) : null}
+        {e.plannedDishes && e.plannedDishes.length > 0 ? (
+          <div className={cn("mt-2 -mb-1", labelClass)}>Potential plans: </div>
         ) : null}
         <PlannedDishesList
           dishes={e.plannedDishes}

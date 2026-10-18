@@ -23,6 +23,7 @@ const updateSchema = z.object({
   tags: z.array(z.enum(DIETARY_TAG_VALUES)).default([]),
   plannedDishes: z.array(plannedDishSchema).optional(),
   openToAllDorms: z.boolean().optional(),
+  visibility: z.enum(["public", "friends"]).optional(),
 });
 
 export async function PATCH(
@@ -96,6 +97,7 @@ export async function PATCH(
       tags: v.tags,
       ...(v.plannedDishes !== undefined ? { plannedDishes: v.plannedDishes } : {}),
       openToAllDorms: v.openToAllDorms ?? false,
+      ...(v.visibility !== undefined ? { visibility: v.visibility } : {}),
     })
     .where(eq(events.id, id));
 

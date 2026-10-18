@@ -16,6 +16,7 @@ import {
 } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
 import { readActor } from "@/lib/actor";
+import { canViewEvent } from "@/lib/friends";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,7 @@ export default async function EventDetail({
       cookClaimedByGuestId: events.cookClaimedByGuestId,
       cookClaimedByName: events.cookClaimedByName,
       openToAllDorms: events.openToAllDorms,
+      visibility: events.visibility,
       canceled: events.canceled,
       hostId: events.hostId,
       hostName: users.username,
@@ -70,6 +72,10 @@ export default async function EventDetail({
   const yesCount = yesCountRow[0]?.c ?? 0;
 
   const actor = await readActor();
+
+  // Friends-only events are visible only to the host and the host's friends
+  const viewerUserId = actor?.kind === "user" ? actor.userId : null;
+  if (!(await canViewEvent(viewerUserId, row))) notFound();
 
   // Find current viewer's RSVP (if any)
   let myRsvp: { status: "yes" | "maybe" | "no" } | undefined;
@@ -147,6 +153,11 @@ export default async function EventDetail({
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="text-2xl font-semibold">{row.title}</h1>
+          {row.visibility === "friends" ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-neutral-700 text-white">
+              Friends Only
+            </span>
+          ) : null}
           {inProgressLeft ? (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[color:var(--success)] text-white">
               In Progress, {inProgressLeft} left
@@ -223,6 +234,7 @@ export default async function EventDetail({
               lookingForIngredients: row.lookingForIngredients,
               lookingForCookware: row.lookingForCookware,
               openToAllDorms: row.openToAllDorms,
+              visibility: row.visibility,
               yesCount,
             }}
           />

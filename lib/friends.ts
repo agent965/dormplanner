@@ -364,3 +364,55 @@ export async function getFriendsAndRequestsForUser(
   return { friends, incomingRequests };
 }
 
+
+/** IDs of all users with an accepted friendship with `userId`. */
+export async function getFriendIds(
+  userId: string | null | undefined
+): Promise<string[]> {
+  if (!userId) return [];
+  await ensureFriendshipsTable();
+  const rows = await db
+    .select({
+      requesterId: friendships.requesterId,
+      addresseeId: friendships.addresseeId,
+    })
+    .from(friendships)
+    .where(
+      and(
+        eq(friendships.status, "accepted"),
+        or(
+          eq(friendships.requesterId, userId),
+          eq(friendships.addresseeId, userId)
+        )
+      )
+    );
+  return rows.map((r) =>
+    r.requesterId === userId ? r.addresseeId : r.requesterId
+  );
+}
+
+/**
+ * SQL condition restricting events to ones the viewer may see:
+ * public events, events they host, or friends-only events hosted by a friend.
+ */
+export function visibleEventsCondition(
+  viewerId: string | null | undefined,
+  friendIds: string[]
+) {
+  const conds = [eq(events.visibility, "public")];
+  if (viewerId) conds.push(eq(events.hostId, viewerId));
+  if (friendIds.length > 0) conds.push(inArray(events.hostId, friendIds));
+  return or(...conds)!;
+}
+
+/** Whether the viewer may see a single event. */
+export async function canViewEvent(
+  viewerId: string | null | undefined,
+  event: { hostId: string; visibility: string | null }
+): Promise<boolean> {
+  if (event.visibility !== "friends") return true;
+  if (!viewerId) return false;
+  if (viewerId === event.hostId) return true;
+  const rel = await getFriendshipRelation(viewerId, event.hostId);
+  return rel.state === "friends";
+}

@@ -8,6 +8,7 @@ import type { RsvpPerson } from "@/components/EventCard";
 import { DormPicker } from "@/components/DormPicker";
 import { LandingHero } from "@/components/LandingHero";
 import { dormName } from "@/lib/dorms";
+import { getFriendIds, visibleEventsCondition } from "@/lib/friends";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +29,22 @@ export default async function Home() {
     )[0] ?? null;
 
   const notEnded = sql`COALESCE(${events.endsAt}, ${events.startsAt} + interval '2 hours') > now()`;
+  // Friends-only events: visible only to the host and the host's friends
+  // (regardless of dorm). Public events keep the existing dorm rules.
+  const friendIds = await getFriendIds(session.user.id);
+  const visible = visibleEventsCondition(session.user.id, friendIds);
   // Signed-in with a dorm: show that dorm + open-to-all. Otherwise show everything.
   const whereClause = me?.dormSlug
     ? and(
         notEnded,
-        or(eq(events.dormSlug, me.dormSlug), eq(events.openToAllDorms, true))
+        visible,
+        or(
+          eq(events.visibility, "friends"),
+          eq(events.dormSlug, me.dormSlug),
+          eq(events.openToAllDorms, true)
+        )
       )
-    : notEnded;
+    : and(notEnded, visible);
 
   const rows = await db
     .select({
@@ -52,6 +62,7 @@ export default async function Home() {
       lookingForCook: events.lookingForCook,
       lookingForIngredients: events.lookingForIngredients,
       lookingForCookware: events.lookingForCookware,
+      visibility: events.visibility,
       canceled: events.canceled,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
@@ -123,6 +134,7 @@ export default async function Home() {
       lookingForCook: e.lookingForCook,
       lookingForIngredients: e.lookingForIngredients,
       lookingForCookware: e.lookingForCookware,
+      visibility: e.visibility,
       canceled: e.canceled,
       goingList: rsvpLists?.going ?? [],
       maybeList: rsvpLists?.maybe ?? [],

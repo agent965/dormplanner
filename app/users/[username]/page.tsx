@@ -8,7 +8,12 @@ import { EventCard } from "@/components/EventCard";
 import { Avatar } from "@/components/Avatar";
 import { EditProfileButton } from "@/components/EditProfileButton";
 import { ProfileStatsBar } from "@/components/ProfileStatsBar";
-import { getFriendshipRelation, getProfileStats } from "@/lib/friends";
+import {
+  getFriendIds,
+  getFriendshipRelation,
+  getProfileStats,
+  visibleEventsCondition,
+} from "@/lib/friends";
 import { dormName } from "@/lib/dorms";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +80,7 @@ export default async function UserProfilePage({
           lookingForCook: events.lookingForCook,
           lookingForIngredients: events.lookingForIngredients,
           lookingForCookware: events.lookingForCookware,
+          visibility: events.visibility,
           canceled: events.canceled,
           rsvpYesCount: sql<number>`(
             select count(*)::int from ${rsvps}
@@ -82,7 +88,16 @@ export default async function UserProfilePage({
           )`.as("yes_count"),
         })
         .from(events)
-        .where(and(eq(events.hostId, userRow.id), gte(events.startsAt, now)))
+        .where(
+          and(
+            eq(events.hostId, userRow.id),
+            gte(events.startsAt, now),
+            visibleEventsCondition(
+              session?.user?.id,
+              await getFriendIds(session?.user?.id)
+            )
+          )
+        )
         .orderBy(events.startsAt)
     : [];
 
@@ -204,6 +219,7 @@ export default async function UserProfilePage({
                   lookingForCook={e.lookingForCook}
                   lookingForIngredients={e.lookingForIngredients}
                   lookingForCookware={e.lookingForCookware}
+                  visibility={e.visibility}
                   canceled={e.canceled}
                 />
               </li>

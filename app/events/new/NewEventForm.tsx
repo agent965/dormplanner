@@ -10,6 +10,10 @@ import {
   LookingForEditor,
   type LookingForState,
 } from "@/components/LookingForSection";
+import {
+  VisibilitySelect,
+  type EventVisibility,
+} from "@/components/VisibilitySelect";
 
 const EVENT_TEMPLATES = [
   { label: "Potluck", title: "Floor potluck", desc: "Everyone brings something. Add what you're bringing to the list." },
@@ -49,6 +53,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
     lookingForCookware: false,
   });
   const [openToAll, setOpenToAll] = useState(false);
+  const [visibility, setVisibility] = useState<EventVisibility>("public");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +102,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           plannedDishes,
           ...lookingFor,
           openToAllDorms: openToAll,
+          visibility,
         }),
       });
       if (!r.ok) {
@@ -253,6 +259,8 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
         />
       </label>
+
+      <VisibilitySelect value={visibility} onChange={setVisibility} />
 
       <label className="flex items-center gap-2 text-sm">
         <input

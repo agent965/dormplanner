@@ -164,7 +164,8 @@ export async function ensureEventRoleColumns() {
         ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_name" text,
         ADD COLUMN IF NOT EXISTS "cook_claimed_by_id" text,
         ADD COLUMN IF NOT EXISTS "cook_claimed_by_guest_id" text,
-        ADD COLUMN IF NOT EXISTS "cook_claimed_by_name" text;
+        ADD COLUMN IF NOT EXISTS "cook_claimed_by_name" text,
+        ADD COLUMN IF NOT EXISTS "visibility" text DEFAULT 'public' NOT NULL;
     `);
     await db.execute(sql`
       ALTER TABLE IF EXISTS "bring_items"

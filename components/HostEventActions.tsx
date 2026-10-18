@@ -10,6 +10,10 @@ import {
   LookingForEditor,
   type LookingForState,
 } from "@/components/LookingForSection";
+import {
+  VisibilitySelect,
+  type EventVisibility,
+} from "@/components/VisibilitySelect";
 
 type EventData = {
   id: string;
@@ -27,6 +31,7 @@ type EventData = {
   lookingForIngredients?: boolean;
   lookingForCookware?: boolean;
   openToAllDorms: boolean;
+  visibility?: string | null;
   yesCount: number;
 };
 
@@ -61,6 +66,9 @@ export function HostEventActions({ event }: { event: EventData }) {
     lookingForCookware: Boolean(event.lookingForCookware),
   });
   const [openToAll, setOpenToAll] = useState(event.openToAllDorms);
+  const [visibility, setVisibility] = useState<EventVisibility>(
+    event.visibility === "friends" ? "friends" : "public"
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -87,6 +95,7 @@ export function HostEventActions({ event }: { event: EventData }) {
       lookingForCookware: Boolean(event.lookingForCookware),
     });
     setOpenToAll(event.openToAllDorms);
+    setVisibility(event.visibility === "friends" ? "friends" : "public");
     setCapacityError(null);
     setError(null);
     setEditing(true);
@@ -149,6 +158,7 @@ export function HostEventActions({ event }: { event: EventData }) {
           tags,
           plannedDishes,
           openToAllDorms: openToAll,
+          visibility,
         }),
       });
 
@@ -371,6 +381,8 @@ export function HostEventActions({ event }: { event: EventData }) {
               </p>
             ) : null}
           </label>
+
+          <VisibilitySelect value={visibility} onChange={setVisibility} />
 
           <label className="flex items-center gap-2 text-sm">
             <input

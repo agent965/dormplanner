@@ -88,6 +88,8 @@ export const events = pgTable(
     cookClaimedByGuestId: text("cook_claimed_by_guest_id"),
     cookClaimedByName: text("cook_claimed_by_name"),
     openToAllDorms: boolean("open_to_all_dorms").notNull().default(false),
+    // "public" (default) or "friends" (visible only to host + host's friends)
+    visibility: text("visibility").notNull().default("public"),
     canceled: boolean("canceled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

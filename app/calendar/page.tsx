@@ -1,11 +1,18 @@
 import { and, gte, lt } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { db, ensureEventRoleColumns } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { EventCalendar, type CalendarEvent } from "@/components/EventCalendar";
+import { getFriendIds, visibleEventsCondition } from "@/lib/friends";
 
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
+  await ensureEventRoleColumns();
+  const session = await auth();
+  const viewerId = session?.user?.id ?? null;
+  const friendIds = await getFriendIds(viewerId);
+
   // Fetch a 4-month window around today (prev month → +3 months) so navigation
   // feels snappy without re-fetching. Can be widened later.
   const now = new Date();
@@ -23,7 +30,13 @@ export default async function CalendarPage() {
       canceled: events.canceled,
     })
     .from(events)
-    .where(and(gte(events.startsAt, windowStart), lt(events.startsAt, windowEnd)))
+    .where(
+      and(
+        gte(events.startsAt, windowStart),
+        lt(events.startsAt, windowEnd),
+        visibleEventsCondition(viewerId, friendIds)
+      )
+    )
     .orderBy(events.startsAt);
 
   const serialized: CalendarEvent[] = rows.map((e) => ({

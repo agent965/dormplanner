@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { cleanupExpiredEvents, db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
 import { events, dorms, rsvps, users } from "@/lib/db/schema";
 import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
+import { getFriendIds, visibleEventsCondition } from "@/lib/friends";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +14,15 @@ export default async function DormFeed({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await cleanupExpiredEvents();
+  await Promise.all([cleanupExpiredEvents(), ensureEventRoleColumns()]);
 
   const { slug } = await params;
   const [dorm] = await db.select().from(dorms).where(eq(dorms.slug, slug));
   if (!dorm) notFound();
+
+  const session = await auth();
+  const viewerId = session?.user?.id ?? null;
+  const friendIds = await getFriendIds(viewerId);
 
   const notEnded = sql`COALESCE(${events.endsAt}, ${events.startsAt} + interval '2 hours') > now()`;
   const rows = await db
@@ -31,6 +37,11 @@ export default async function DormFeed({
       capacity: events.capacity,
       tags: events.tags,
       plannedDishes: events.plannedDishes,
+      lookingForDishwasher: events.lookingForDishwasher,
+      lookingForCook: events.lookingForCook,
+      lookingForIngredients: events.lookingForIngredients,
+      lookingForCookware: events.lookingForCookware,
+      visibility: events.visibility,
       canceled: events.canceled,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
@@ -40,7 +51,13 @@ export default async function DormFeed({
     })
     .from(events)
     .leftJoin(users, eq(events.hostId, users.id))
-    .where(and(notEnded, eq(events.dormSlug, slug)))
+    .where(
+      and(
+        notEnded,
+        eq(events.dormSlug, slug),
+        visibleEventsCondition(viewerId, friendIds)
+      )
+    )
     .orderBy(events.canceled, events.startsAt, sql`lower(${events.title})`);
 
   const rsvpRows =
@@ -97,6 +114,11 @@ export default async function DormFeed({
       capacity: e.capacity,
       tags: e.tags,
       plannedDishes: e.plannedDishes ?? [],
+      lookingForDishwasher: e.lookingForDishwasher,
+      lookingForCook: e.lookingForCook,
+      lookingForIngredients: e.lookingForIngredients,
+      lookingForCookware: e.lookingForCookware,
+      visibility: e.visibility,
       canceled: e.canceled,
       goingList: rsvpLists?.going ?? [],
       maybeList: rsvpLists?.maybe ?? [],

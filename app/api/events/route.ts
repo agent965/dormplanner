@@ -26,6 +26,7 @@ const createSchema = z.object({
   lookingForIngredients: z.boolean().optional().default(false),
   lookingForCookware: z.boolean().optional().default(false),
   openToAllDorms: z.boolean().optional(),
+  visibility: z.enum(["public", "friends"]).optional().default("public"),
 });
 
 export async function POST(req: Request) {
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
     lookingForIngredients: v.lookingForIngredients ?? false,
     lookingForCookware: v.lookingForCookware ?? false,
     openToAllDorms: v.openToAllDorms ?? false,
+    visibility: v.visibility ?? "public",
   });
   return NextResponse.json({ id });
 }

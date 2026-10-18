@@ -37,10 +37,10 @@ export const LOOKING_FOR_BUTTONS: Array<{
   key: keyof LookingForState;
   label: string;
 }> = [
-  { key: "lookingForDishwasher", label: "Looking for dishwasher" },
-  { key: "lookingForCook", label: "Looking for Cook" },
-  { key: "lookingForIngredients", label: "Looking for Ingredients" },
-  { key: "lookingForCookware", label: "Looking for Cookware/Utensils" },
+  { key: "lookingForDishwasher", label: "Wash Dishes" },
+  { key: "lookingForCook", label: "Cook" },
+  { key: "lookingForIngredients", label: "Buy/Bring Ingredients" },
+  { key: "lookingForCookware", label: "Bring Cookware/Utensils" },
 ];
 
 export function LookingForImages({ state }: { state: LookingForState }) {
