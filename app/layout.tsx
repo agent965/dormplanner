@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fredoka } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { auth } from "@/lib/auth";
@@ -14,9 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "Dormplanner · UW",
-  description: "Plan dorm events — cooking nights, pizza parties, study breaks — with your floor.",
+  description: "Plan dorm cooking nights, pizza parties, study breaks — with your floor.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,15 +30,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Nav user={session?.user ?? null} />
         <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 sm:px-6">
           {children}
         </main>
-        <footer className="w-full max-w-3xl mx-auto px-4 py-6 text-xs text-[color:var(--muted)]">
-          Dormplanner · built for UW dorms · hackathon demo
+        <footer className="w-full max-w-3xl mx-auto px-4 py-6 text-xs text-[color:var(--muted)] text-center">
+          Dormplanner · built with love in a UW dorm kitchen
         </footer>
       </body>
     </html>

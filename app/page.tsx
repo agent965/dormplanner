@@ -7,6 +7,16 @@ import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
 import { DormPicker } from "@/components/DormPicker";
 import { dormName } from "@/lib/dorms";
+import {
+  PizzaSlice,
+  Bowl,
+  Cookie,
+  Mug,
+  Pot,
+  Carrot,
+  Cupcake,
+  Bread,
+} from "@/components/FoodArt";
 
 export const dynamic = "force-dynamic";
 
@@ -118,45 +128,49 @@ export default async function Home() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-xl font-semibold">
-              {me ? `Hey ${me.name?.split(" ")[0] ?? "there"} 👋` : "Dorm events at UW"}
+      <section className="relative overflow-hidden card p-5 sm:p-6">
+        {/* Scattered food doodles behind the hero */}
+        <div className="doodles" aria-hidden>
+          <PizzaSlice size={64} style={{ top: "-10px", left: "-6px", transform: "rotate(-18deg)" }} />
+          <Bowl size={56} style={{ top: "40%", right: "-10px", transform: "rotate(8deg)" }} />
+          <Cookie size={44} style={{ bottom: "-8px", left: "22%", transform: "rotate(-10deg)" }} />
+          <Mug size={48} style={{ top: "8px", right: "28%", transform: "rotate(14deg)" }} />
+          <Pot size={60} style={{ bottom: "-14px", right: "20%", transform: "rotate(-6deg)" }} />
+          <Carrot size={44} style={{ top: "48%", left: "32%", transform: "rotate(22deg)" }} />
+          <Cupcake size={40} style={{ top: "16%", left: "60%", transform: "rotate(-14deg)" }} />
+          <Bread size={52} style={{ bottom: "22%", left: "-10px", transform: "rotate(10deg)" }} />
+        </div>
+
+        <div className="relative flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-semibold display">
+              {me ? (
+                <>Hey {me.name?.split(" ")[0] ?? "there"}, hungry?</>
+              ) : (
+                <>What&apos;s cookin&apos; in the dorms?</>
+              )}
             </h1>
-            <p className="text-sm text-[color:var(--muted)]">
+            <p className="mt-1.5 text-sm text-[color:var(--muted)] max-w-md">
               {me ? (
                 me.dormSlug ? (
                   <>
-                    Showing events in <strong>{dormName(me.dormSlug)}</strong>
-                    {me.floor ? ` · floor ${me.floor}` : ""} + anything open to all dorms.
+                    Showing events in <strong className="text-[color:var(--foreground)]">{dormName(me.dormSlug)}</strong>
+                    {me.floor ? ` · floor ${me.floor}` : ""} plus anything open to all dorms.
                   </>
                 ) : (
-                  "Pick your dorm to filter the feed."
+                  "Pick your dorm below to filter the feed."
                 )
               ) : (
-                "Browse and RSVP freely. Sign in with @uw.edu to host your own event."
+                <>Browse and RSVP freely — no account needed. Sign in with a username to host your own.</>
               )}
             </p>
           </div>
-          {me ? (
-            <Link
-              href="/events/new"
-              className="px-3 py-2 text-sm font-medium rounded-md bg-[color:var(--accent)] text-[color:var(--accent-fg)]"
-            >
-              + New event
-            </Link>
-          ) : (
-            <Link
-              href="/signin"
-              className="px-3 py-2 text-sm font-medium rounded-md bg-[color:var(--accent)] text-[color:var(--accent-fg)]"
-            >
-              Sign in to host
-            </Link>
-          )}
+          <Link href={me ? "/events/new" : "/signin"} className="btn-primary text-sm whitespace-nowrap">
+            {me ? "+ New event" : "Sign in to host"}
+          </Link>
         </div>
         {me ? (
-          <div className="mt-3 pt-3 border-t border-[color:var(--border)]">
+          <div className="relative mt-4 pt-4 border-t border-[color:var(--border)]">
             <DormPicker
               currentDormSlug={me.dormSlug ?? null}
               currentFloor={me.floor ?? null}

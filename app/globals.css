@@ -1,13 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf7;
-  --foreground: #1a1a1a;
+  --background: #fdf8ec;
+  --foreground: #2a1f1a;
   --surface: #ffffff;
-  --border: #e7e5df;
-  --muted: #6b6b6b;
+  --border: #ead9c0;
+  --muted: #85766b;
+
   --husky-purple: #4b2e83;
   --husky-gold: #b7a57a;
+
+  /* Cooking palette */
+  --tomato: #e85a4f;
+  --cheese: #f4b942;
+  --herb: #6ba368;
+  --cream: #fff5e4;
+  --crust: #c48855;
+
   --accent: #4b2e83;
   --accent-fg: #ffffff;
   --danger: #c0392b;
@@ -24,19 +33,26 @@
   --color-accent-fg: var(--accent-fg);
   --color-husky-purple: var(--husky-purple);
   --color-husky-gold: var(--husky-gold);
+  --color-tomato: var(--tomato);
+  --color-cheese: var(--cheese);
+  --color-herb: var(--herb);
+  --color-cream: var(--cream);
+  --color-crust: var(--crust);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fredoka);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0d0b14;
-    --foreground: #ededed;
-    --surface: #16131f;
-    --border: #2a2535;
-    --muted: #9a93a8;
-    --accent: #8a6cc9;
-    --accent-fg: #ffffff;
+    --background: #1a1512;
+    --foreground: #faf0e0;
+    --surface: #251d18;
+    --border: #3d2f26;
+    --muted: #a79585;
+    --cream: #251d18;
+    --accent: #a688e5;
+    --accent-fg: #1a1512;
   }
 }
 
@@ -44,17 +60,39 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  background-image:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--cheese) 10%, transparent) 0, transparent 20%),
+    radial-gradient(circle at 90% 20%, color-mix(in srgb, var(--tomato) 8%, transparent) 0, transparent 20%),
+    radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--herb) 10%, transparent) 0, transparent 20%),
+    radial-gradient(circle at 85% 90%, color-mix(in srgb, var(--husky-purple) 8%, transparent) 0, transparent 20%);
+  background-attachment: fixed;
 }
 
-/* Small utility: tag chips */
+/* Headings: cute display font */
+h1, h2, h3, .display {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Soft card */
+.card {
+  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--crust) 30%, transparent),
+    0 4px 20px -8px color-mix(in srgb, var(--crust) 20%, transparent);
+}
+
+/* Dietary / food chips */
 .tag {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.1rem 0.5rem;
+  padding: 0.1rem 0.55rem;
   border-radius: 9999px;
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 600;
   background: color-mix(in srgb, var(--husky-purple) 10%, transparent);
   color: var(--husky-purple);
   border: 1px solid color-mix(in srgb, var(--husky-purple) 20%, transparent);
@@ -62,7 +100,56 @@ body {
 @media (prefers-color-scheme: dark) {
   .tag {
     background: color-mix(in srgb, var(--accent) 20%, transparent);
-    color: #c9b6ff;
+    color: #d7c3ff;
     border-color: color-mix(in srgb, var(--accent) 40%, transparent);
   }
+}
+
+/* Playful "sticker" chip */
+.sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--cream);
+  color: var(--crust);
+  border: 1.5px solid var(--crust);
+  box-shadow: 2px 2px 0 var(--crust);
+  transform: rotate(-2deg);
+}
+
+/* Scattered doodle layer behind heroes */
+.doodles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.doodles > * {
+  position: absolute;
+  color: var(--husky-purple);
+  opacity: 0.12;
+}
+
+/* Primary button cute hover */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-radius: 0.65rem;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, black);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, black);
+}
+.btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, black);
 }
