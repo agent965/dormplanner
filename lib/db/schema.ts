@@ -38,6 +38,14 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   dormSlug: text("dorm_slug"),
   floor: text("floor"),
+  // Profile fields (all optional)
+  displayName: text("display_name"),
+  bio: text("bio"),
+  major: text("major"),
+  campus: text("campus"),
+  year: text("year"),
+  pronouns: text("pronouns"),
+  avatar: text("avatar"), // base64 data URL (resized client-side)
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -73,6 +73,14 @@ if (!globalForDb.schemaSynced) {
   pool
     .query(`ALTER TABLE IF EXISTS "rsvps" ADD COLUMN IF NOT EXISTS "fingerprint" text;`)
     .catch(() => {});
+  // Profile fields
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "display_name" text;`).catch(() => {});
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "bio" text;`).catch(() => {});
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "major" text;`).catch(() => {});
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "campus" text;`).catch(() => {});
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "year" text;`).catch(() => {});
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "pronouns" text;`).catch(() => {});
+  pool.query(`ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "avatar" text;`).catch(() => {});
   pool
     .query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "rsvps_event_fingerprint_uidx"

@@ -41,6 +41,12 @@ export function Nav({ user }: { user: NavUser }) {
               <Link href="/events/new" className="hover:underline">
                 New event
               </Link>
+              <Link
+                href="/profile"
+                className="text-sm text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+              >
+                Edit profile
+              </Link>
               {user.name ? (
                 <Link
                   href={`/users/${encodeURIComponent(user.name)}`}
