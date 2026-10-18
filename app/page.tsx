@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { cleanupExpiredEvents, db } from "@/lib/db";
+import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
@@ -12,7 +12,7 @@ import { dormName } from "@/lib/dorms";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  await cleanupExpiredEvents();
+  await Promise.all([cleanupExpiredEvents(), ensureEventRoleColumns()]);
 
   const session = await auth();
   if (!session?.user?.id) {
@@ -48,6 +48,10 @@ export default async function Home() {
       capacity: events.capacity,
       tags: events.tags,
       plannedDishes: events.plannedDishes,
+      lookingForDishwasher: events.lookingForDishwasher,
+      lookingForCook: events.lookingForCook,
+      lookingForIngredients: events.lookingForIngredients,
+      lookingForCookware: events.lookingForCookware,
       canceled: events.canceled,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
@@ -115,6 +119,10 @@ export default async function Home() {
       capacity: e.capacity,
       tags: e.tags,
       plannedDishes: e.plannedDishes ?? [],
+      lookingForDishwasher: e.lookingForDishwasher,
+      lookingForCook: e.lookingForCook,
+      lookingForIngredients: e.lookingForIngredients,
+      lookingForCookware: e.lookingForCookware,
       canceled: e.canceled,
       goingList: rsvpLists?.going ?? [],
       maybeList: rsvpLists?.maybe ?? [],

@@ -225,7 +225,7 @@ export function BringList({
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => patch(item.id, { action: "approve" })}
-                        className="text-xs px-2.5 py-1 rounded bg-[color:var(--husky-purple)] text-white font-medium"
+                        className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
                       >
                         Approve
                       </button>
@@ -327,7 +327,7 @@ export function BringList({
                           }
                           patch(item.id, { action: "unclaim" });
                         }}
-                        className="text-xs px-2 py-1 rounded border border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
+                        className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
                       >
                         Unclaim
                       </button>

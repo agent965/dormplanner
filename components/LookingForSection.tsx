@@ -1032,6 +1032,7 @@ export function EventRolesAndLookingFor({
 
   const cookClaimed = Boolean(data.cookClaimedById || data.cookClaimedByGuestId);
   const myCookClaim = isMyClaim(data.cookClaimedById, data.cookClaimedByGuestId);
+  const showCookSignup = Boolean(data.lookingForCook || cookClaimed);
 
   const dishClaimed = Boolean(
     data.dishwasherClaimedById || data.dishwasherClaimedByGuestId
@@ -1040,175 +1041,184 @@ export function EventRolesAndLookingFor({
     data.dishwasherClaimedById,
     data.dishwasherClaimedByGuestId
   );
+  const showDishwasherSignup = Boolean(data.lookingForDishwasher || dishClaimed);
+
+  const showSignUpBox = showCookSignup || showDishwasherSignup;
 
   return (
     <>
-      {/* Box below "Are you going?" allowing users to sign up to cook or do dishes */}
-      <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-medium">Sign up to help</h2>
-          <span className="text-xs text-[color:var(--muted)]">
-            Cook &amp; dishwasher · live
-          </span>
-        </div>
+      {/* Box below "Are you going?" allowing users to sign up to cook or do dishes (only shown if Cook or Wash Dishes was enabled) */}
+      {showSignUpBox ? (
+        <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-medium">Sign up to help</h2>
+            <span className="text-xs text-[color:var(--muted)]">
+              Live
+            </span>
+          </div>
 
-        <ul className="space-y-2">
-          {/* Cook signup row */}
-          <li
-            className={cn(
-              "flex items-center justify-between gap-3 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3",
-              cookClaimed && "opacity-85"
-            )}
-          >
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "font-medium",
-                    cookClaimed &&
-                      "line-through decoration-[color:var(--husky-purple)]/50"
-                  )}
-                >
-                  Cook
-                </span>
-                {data.lookingForCook ? (
-                  <span className="tag text-[11px]">Looking for Cook</span>
-                ) : null}
-              </div>
-              <div className="mt-1 text-xs text-[color:var(--muted)]">
-                {cookClaimed ? (
-                  myCookClaim ? (
-                    "You signed up to cook"
-                  ) : (
-                    <>
-                      {data.cookClaimedById && data.cookClaimedByName ? (
-                        <Link
-                          href={`/users/${encodeURIComponent(
+          <ul className="space-y-2">
+            {/* Cook signup row */}
+            {showCookSignup ? (
+              <li
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3",
+                  cookClaimed && "opacity-85"
+                )}
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "font-medium",
+                        cookClaimed &&
+                          "line-through decoration-[color:var(--husky-purple)]/50"
+                      )}
+                    >
+                      Cook
+                    </span>
+                    {data.lookingForCook ? (
+                      <span className="tag text-[11px]">Cook</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--muted)]">
+                    {cookClaimed ? (
+                      myCookClaim ? (
+                        "You signed up to cook"
+                      ) : (
+                        <>
+                          {data.cookClaimedById && data.cookClaimedByName ? (
+                            <Link
+                              href={`/users/${encodeURIComponent(
+                                data.cookClaimedByName
+                              )}`}
+                              className="underline hover:text-[color:var(--husky-purple)]"
+                            >
+                              {data.cookClaimedByName}
+                            </Link>
+                          ) : (
                             data.cookClaimedByName
-                          )}`}
-                          className="underline hover:text-[color:var(--husky-purple)]"
-                        >
-                          {data.cookClaimedByName}
-                        </Link>
-                      ) : (
-                        data.cookClaimedByName
-                      )}{" "}
-                      is cooking
-                    </>
-                  )
-                ) : (
-                  "Sign up to cook for this event"
-                )}
-              </div>
-            </div>
+                          )}{" "}
+                          is cooking
+                        </>
+                      )
+                    ) : (
+                      "Sign up to cook for this event"
+                    )}
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {cookClaimed ? (
-                myCookClaim || isHost ? (
-                  <button
-                    type="button"
-                    disabled={busyRole === "cook"}
-                    onClick={() => handleRoleAction("cook", "unclaim")}
-                    className="text-xs px-2.5 py-1 rounded border border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
-                  >
-                    Unclaim
-                  </button>
-                ) : null
-              ) : (
-                <button
-                  type="button"
-                  disabled={busyRole === "cook"}
-                  onClick={() => handleRoleAction("cook", "claim")}
-                  className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
-                >
-                  I&apos;ll cook
-                </button>
-              )}
-            </div>
-          </li>
-
-          {/* Dishwasher signup row */}
-          <li
-            className={cn(
-              "flex items-center justify-between gap-3 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3",
-              dishClaimed && "opacity-85"
-            )}
-          >
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "font-medium",
-                    dishClaimed &&
-                      "line-through decoration-[color:var(--husky-purple)]/50"
-                  )}
-                >
-                  Dishwasher
-                </span>
-                {data.lookingForDishwasher ? (
-                  <span className="tag text-[11px]">
-                    Looking for dishwasher
-                  </span>
-                ) : null}
-              </div>
-              <div className="mt-1 text-xs text-[color:var(--muted)]">
-                {dishClaimed ? (
-                  myDishClaim ? (
-                    "You signed up to do dishes"
+                <div className="flex items-center gap-2 shrink-0">
+                  {cookClaimed ? (
+                    myCookClaim || isHost ? (
+                      <button
+                        type="button"
+                        disabled={busyRole === "cook"}
+                        onClick={() => handleRoleAction("cook", "unclaim")}
+                        className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
+                      >
+                        Unclaim
+                      </button>
+                    ) : null
                   ) : (
-                    <>
-                      {data.dishwasherClaimedById &&
-                      data.dishwasherClaimedByName ? (
-                        <Link
-                          href={`/users/${encodeURIComponent(
-                            data.dishwasherClaimedByName
-                          )}`}
-                          className="underline hover:text-[color:var(--husky-purple)]"
-                        >
-                          {data.dishwasherClaimedByName}
-                        </Link>
-                      ) : (
-                        data.dishwasherClaimedByName
-                      )}{" "}
-                      is doing dishes
-                    </>
-                  )
-                ) : (
-                  "Sign up to do dishes for this event"
+                    <button
+                      type="button"
+                      disabled={busyRole === "cook"}
+                      onClick={() => handleRoleAction("cook", "claim")}
+                      className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
+                    >
+                      I&apos;ll cook
+                    </button>
+                  )}
+                </div>
+              </li>
+            ) : null}
+
+            {/* Dishwasher signup row */}
+            {showDishwasherSignup ? (
+              <li
+                className={cn(
+                  "flex items-center justify-between gap-3 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3",
+                  dishClaimed && "opacity-85"
                 )}
-              </div>
-            </div>
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "font-medium",
+                        dishClaimed &&
+                          "line-through decoration-[color:var(--husky-purple)]/50"
+                      )}
+                    >
+                      Dishwasher
+                    </span>
+                    {data.lookingForDishwasher ? (
+                      <span className="tag text-[11px]">
+                        Wash Dishes
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--muted)]">
+                    {dishClaimed ? (
+                      myDishClaim ? (
+                        "You signed up to do dishes"
+                      ) : (
+                        <>
+                          {data.dishwasherClaimedById &&
+                          data.dishwasherClaimedByName ? (
+                            <Link
+                              href={`/users/${encodeURIComponent(
+                                data.dishwasherClaimedByName
+                              )}`}
+                              className="underline hover:text-[color:var(--husky-purple)]"
+                            >
+                              {data.dishwasherClaimedByName}
+                            </Link>
+                          ) : (
+                            data.dishwasherClaimedByName
+                          )}{" "}
+                          is doing dishes
+                        </>
+                      )
+                    ) : (
+                      "Sign up to do dishes for this event"
+                    )}
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {dishClaimed ? (
-                myDishClaim || isHost ? (
-                  <button
-                    type="button"
-                    disabled={busyRole === "dishwasher"}
-                    onClick={() => handleRoleAction("dishwasher", "unclaim")}
-                    className="text-xs px-2.5 py-1 rounded border border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
-                  >
-                    Unclaim
-                  </button>
-                ) : null
-              ) : (
-                <button
-                  type="button"
-                  disabled={busyRole === "dishwasher"}
-                  onClick={() => handleRoleAction("dishwasher", "claim")}
-                  className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
-                >
-                  I&apos;ll do dishes
-                </button>
-              )}
-            </div>
-          </li>
-        </ul>
+                <div className="flex items-center gap-2 shrink-0">
+                  {dishClaimed ? (
+                    myDishClaim || isHost ? (
+                      <button
+                        type="button"
+                        disabled={busyRole === "dishwasher"}
+                        onClick={() => handleRoleAction("dishwasher", "unclaim")}
+                        className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
+                      >
+                        Unclaim
+                      </button>
+                    ) : null
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busyRole === "dishwasher"}
+                      onClick={() => handleRoleAction("dishwasher", "claim")}
+                      className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
+                    >
+                      I&apos;ll do dishes
+                    </button>
+                  )}
+                </div>
+              </li>
+            ) : null}
+          </ul>
 
-        {error ? (
-          <p className="text-xs text-[color:var(--danger)]">{error}</p>
-        ) : null}
-      </section>
+          {error ? (
+            <p className="text-xs text-[color:var(--danger)]">{error}</p>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Box below displaying the four images representative of the state of the tags */}
       <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">

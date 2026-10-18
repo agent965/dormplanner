@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { cleanupExpiredEvents, db } from "@/lib/db";
+import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
 import { events, pastEvents, rsvps, users } from "@/lib/db/schema";
 import { PastEventCard } from "@/components/PastEventCard";
 import { EventCard } from "@/components/EventCard";
@@ -18,7 +18,7 @@ export default async function UserProfilePage({
 }: {
   params: Promise<{ username: string }>;
 }) {
-  await cleanupExpiredEvents();
+  await Promise.all([cleanupExpiredEvents(), ensureEventRoleColumns()]);
 
   const { username: rawUsername } = await params;
   const targetUsername = decodeURIComponent(rawUsername).trim().toLowerCase();
@@ -71,6 +71,10 @@ export default async function UserProfilePage({
           capacity: events.capacity,
           tags: events.tags,
           plannedDishes: events.plannedDishes,
+          lookingForDishwasher: events.lookingForDishwasher,
+          lookingForCook: events.lookingForCook,
+          lookingForIngredients: events.lookingForIngredients,
+          lookingForCookware: events.lookingForCookware,
           canceled: events.canceled,
           rsvpYesCount: sql<number>`(
             select count(*)::int from ${rsvps}
@@ -196,6 +200,10 @@ export default async function UserProfilePage({
                   capacity={e.capacity}
                   tags={e.tags}
                   plannedDishes={e.plannedDishes}
+                  lookingForDishwasher={e.lookingForDishwasher}
+                  lookingForCook={e.lookingForCook}
+                  lookingForIngredients={e.lookingForIngredients}
+                  lookingForCookware={e.lookingForCookware}
                   canceled={e.canceled}
                 />
               </li>

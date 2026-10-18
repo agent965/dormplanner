@@ -30,6 +30,10 @@ export type EventCardProps = {
   capacity?: number | null;
   tags?: string[] | null;
   plannedDishes?: PlannedDish[] | null;
+  lookingForDishwasher?: boolean | null;
+  lookingForCook?: boolean | null;
+  lookingForIngredients?: boolean | null;
+  lookingForCookware?: boolean | null;
   canceled?: boolean | null;
   pinned?: boolean;
   onTogglePin?: (id: string) => void;
@@ -60,6 +64,12 @@ export function EventCard(e: EventCardProps) {
   const cantGo = e.cantGoList ?? [];
   const hasRsvpBubbles =
     going.length > 0 || maybe.length > 0 || cantGo.length > 0;
+
+  const lookingForLabels: string[] = [];
+  if (e.lookingForDishwasher) lookingForLabels.push("Wash Dishes");
+  if (e.lookingForCook) lookingForLabels.push("Cook");
+  if (e.lookingForIngredients) lookingForLabels.push("Buy/Bring Ingredients");
+  if (e.lookingForCookware) lookingForLabels.push("Bring Cookware/Utensils");
 
   function renderPersonBubble(
     person: RsvpPerson,
@@ -135,6 +145,24 @@ export function EventCard(e: EventCardProps) {
             </span>
           ) : null}
         </div>
+        {lookingForLabels.length > 0 ? (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-[color:var(--muted)] font-medium">
+              Looking for:{" "}
+            </span>
+            {lookingForLabels.map((label) => (
+              <span
+                key={label}
+                className={cn(
+                  "inline-flex items-center px-2.5 py-0.5 rounded-full border border-transparent bg-[color:var(--husky-purple)] text-white font-medium",
+                  e.canceled && "opacity-60"
+                )}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {hasRsvpBubbles ? (
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
             {going.map((p, i) =>
