@@ -2,7 +2,7 @@ import Link from "next/link";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
-import { events, rsvps, users } from "@/lib/db/schema";
+import { bringItems, events, rsvps, users } from "@/lib/db/schema";
 import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
 import { LandingHero } from "@/components/LandingHero";
@@ -50,6 +50,8 @@ export default async function Home() {
       lookingForCook: events.lookingForCook,
       lookingForIngredients: events.lookingForIngredients,
       lookingForCookware: events.lookingForCookware,
+      dishwasherClaimedById: events.dishwasherClaimedById,
+      cookClaimedById: events.cookClaimedById,
       visibility: events.visibility,
       canceled: events.canceled,
       hostName: users.username,
@@ -70,6 +72,7 @@ export default async function Home() {
       ? await db
           .select({
             eventId: rsvps.eventId,
+            userId: rsvps.userId,
             status: rsvps.status,
             username: users.username,
             guestName: rsvps.guestName,
@@ -84,6 +87,39 @@ export default async function Home() {
           )
           .orderBy(rsvps.updatedAt)
       : [];
+
+  const userRsvpdEventIds = new Set<string>();
+  for (const r of rsvpRows) {
+    if (r.userId && r.userId === session.user.id) {
+      userRsvpdEventIds.add(r.eventId);
+    }
+  }
+  for (const r of rows) {
+    if (
+      (r.dishwasherClaimedById && r.dishwasherClaimedById === session.user.id) ||
+      (r.cookClaimedById && r.cookClaimedById === session.user.id)
+    ) {
+      userRsvpdEventIds.add(r.id);
+    }
+  }
+
+  if (rows.length > 0) {
+    const claimedItems = await db
+      .select({ eventId: bringItems.eventId })
+      .from(bringItems)
+      .where(
+        and(
+          inArray(
+            bringItems.eventId,
+            rows.map((r) => r.id)
+          ),
+          eq(bringItems.claimedById, session.user.id)
+        )
+      );
+    for (const item of claimedItems) {
+      userRsvpdEventIds.add(item.eventId);
+    }
+  }
 
   const rsvpByEvent = new Map<
     string,
@@ -127,6 +163,7 @@ export default async function Home() {
       lookingForCookware: e.lookingForCookware,
       visibility: e.visibility,
       canceled: e.canceled,
+      isUserRsvpd: userRsvpdEventIds.has(e.id),
       goingList: rsvpLists?.going ?? [],
       maybeList: rsvpLists?.maybe ?? [],
       cantGoList: rsvpLists?.cantGo ?? [],

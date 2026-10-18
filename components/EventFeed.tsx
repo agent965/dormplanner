@@ -7,6 +7,8 @@ import { UW_DORMS, dormName } from "@/lib/dorms";
 import { cn, type DietaryTagValue } from "@/lib/utils";
 
 const STORAGE_KEY = "dormplanner_tracked_events";
+const SEEN_CANCELED_KEY = "dormplanner_seen_canceled_events";
+const DISMISSED_CANCELED_KEY = "dormplanner_dismissed_canceled_events";
 
 const DIETARY_FILTER_OPTIONS: Array<{ value: DietaryTagValue; label: string }> = [
   { value: "vegetarian", label: "Vegetarian" },
@@ -150,6 +152,8 @@ export function EventFeed({
   userFloor?: string | null;
 }) {
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [seenCanceledOnMount, setSeenCanceledOnMount] = useState<Set<string>>(() => new Set());
+  const [dismissedCanceledIds, setDismissedCanceledIds] = useState<string[]>([]);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
 
   // Filter states
@@ -163,12 +167,37 @@ export function EventFeed({
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
+      const rawPinned = localStorage.getItem(STORAGE_KEY);
+      if (rawPinned) {
+        const parsed = JSON.parse(rawPinned);
         if (Array.isArray(parsed)) {
           setPinnedIds(parsed.filter((x): x is string => typeof x === "string"));
         }
+      }
+
+      const rawSeen = localStorage.getItem(SEEN_CANCELED_KEY);
+      const parsedSeen: string[] = rawSeen ? JSON.parse(rawSeen) : [];
+      const initialSeenSet = new Set(Array.isArray(parsedSeen) ? parsedSeen : []);
+      setSeenCanceledOnMount(initialSeenSet);
+
+      const rawDismissed = localStorage.getItem(DISMISSED_CANCELED_KEY);
+      const parsedDismissed: string[] = rawDismissed ? JSON.parse(rawDismissed) : [];
+      if (Array.isArray(parsedDismissed)) {
+        setDismissedCanceledIds(parsedDismissed);
+      }
+
+      // Mark all visible canceled RSVP'd events as seen in localStorage
+      // so that upon future refresh, they will be removed.
+      const nextSeen = new Set(initialSeenSet);
+      let updated = false;
+      for (const ev of events) {
+        if (ev.canceled && ev.isUserRsvpd && !nextSeen.has(ev.id)) {
+          nextSeen.add(ev.id);
+          updated = true;
+        }
+      }
+      if (updated) {
+        localStorage.setItem(SEEN_CANCELED_KEY, JSON.stringify(Array.from(nextSeen)));
       }
     } catch {
       // ignore storage errors
@@ -183,17 +212,51 @@ export function EventFeed({
   }, []);
 
   function togglePin(id: string) {
-    setPinnedIds((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
+    const isCurrentlyPinned = pinnedIds.includes(id);
+    const targetEvent = events.find((e) => e.id === id);
+
+    if (isCurrentlyPinned) {
+      // Unpin event
+      const next = pinnedIds.filter((x) => x !== id);
+      setPinnedIds(next);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
         // ignore storage errors
       }
-      return next;
-    });
+
+      // If the event was canceled, disappear as soon as it is unpinned
+      if (targetEvent?.canceled) {
+        setDismissedCanceledIds((prev) => {
+          const nextDismissed = prev.includes(id) ? prev : [...prev, id];
+          try {
+            localStorage.setItem(
+              DISMISSED_CANCELED_KEY,
+              JSON.stringify(nextDismissed)
+            );
+            // Also ensure it is recorded in seen list
+            const rawSeen = localStorage.getItem(SEEN_CANCELED_KEY);
+            const seenList: string[] = rawSeen ? JSON.parse(rawSeen) : [];
+            if (!seenList.includes(id)) {
+              seenList.push(id);
+              localStorage.setItem(SEEN_CANCELED_KEY, JSON.stringify(seenList));
+            }
+          } catch {
+            // ignore storage errors
+          }
+          return nextDismissed;
+        });
+      }
+    } else {
+      // Pin event
+      const next = [...pinnedIds, id];
+      setPinnedIds(next);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+    }
   }
 
   function toggleDietaryTag(val: DietaryTagValue) {
@@ -251,6 +314,23 @@ export function EventFeed({
   // Filter events
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
+      // Canceled events visibility rules:
+      if (e.canceled) {
+        // If dismissed / unpinned while canceled, remove completely
+        if (dismissedCanceledIds.includes(e.id)) return false;
+
+        const isPinned = pinnedIds.includes(e.id);
+        if (!isPinned) {
+          // Non-pinned canceled events:
+          // 1. Remove for anyone not RSVP'd
+          if (!e.isUserRsvpd) return false;
+
+          // 2. For RSVP'd users: remove once page has been refreshed (already seen on mount)
+          if (seenCanceledOnMount.has(e.id)) return false;
+        }
+        // If pinned: stays until unpinned
+      }
+
       if (!matchesSearch(e, searchQuery)) return false;
       if (!matchesDorm(e, dormFilter, includeOpenToAll)) return false;
       if (!matchesFloor(e, floorFilter)) return false;
@@ -260,6 +340,9 @@ export function EventFeed({
     });
   }, [
     events,
+    dismissedCanceledIds,
+    pinnedIds,
+    seenCanceledOnMount,
     searchQuery,
     dormFilter,
     includeOpenToAll,

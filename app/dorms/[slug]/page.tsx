@@ -41,6 +41,8 @@ export default async function DormFeed({
       lookingForCook: events.lookingForCook,
       lookingForIngredients: events.lookingForIngredients,
       lookingForCookware: events.lookingForCookware,
+      dishwasherClaimedById: events.dishwasherClaimedById,
+      cookClaimedById: events.cookClaimedById,
       visibility: events.visibility,
       canceled: events.canceled,
       hostName: users.username,
@@ -65,6 +67,7 @@ export default async function DormFeed({
       ? await db
           .select({
             eventId: rsvps.eventId,
+            userId: rsvps.userId,
             status: rsvps.status,
             username: users.username,
             guestName: rsvps.guestName,
@@ -79,6 +82,23 @@ export default async function DormFeed({
           )
           .orderBy(rsvps.updatedAt)
       : [];
+
+  const userRsvpdEventIds = new Set<string>();
+  if (viewerId) {
+    for (const r of rsvpRows) {
+      if (r.userId && r.userId === viewerId) {
+        userRsvpdEventIds.add(r.eventId);
+      }
+    }
+    for (const r of rows) {
+      if (
+        (r.dishwasherClaimedById && r.dishwasherClaimedById === viewerId) ||
+        (r.cookClaimedById && r.cookClaimedById === viewerId)
+      ) {
+        userRsvpdEventIds.add(r.id);
+      }
+    }
+  }
 
   const rsvpByEvent = new Map<
     string,
@@ -120,6 +140,7 @@ export default async function DormFeed({
       lookingForCookware: e.lookingForCookware,
       visibility: e.visibility,
       canceled: e.canceled,
+      isUserRsvpd: userRsvpdEventIds.has(e.id),
       goingList: rsvpLists?.going ?? [],
       maybeList: rsvpLists?.maybe ?? [],
       cantGoList: rsvpLists?.cantGo ?? [],

@@ -127,8 +127,7 @@ export async function DELETE(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  // Kick out all people who joined and mark event as canceled
-  await db.delete(rsvps).where(eq(rsvps.eventId, id));
+  // Mark event as canceled (preserve RSVPs so attendees know the event was canceled)
   await db
     .update(events)
     .set({ canceled: true })

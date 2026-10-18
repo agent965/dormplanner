@@ -44,6 +44,7 @@ export type EventCardProps = {
   goingList?: RsvpPerson[];
   maybeList?: RsvpPerson[];
   cantGoList?: RsvpPerson[];
+  isUserRsvpd?: boolean;
 };
 
 export function EventCard(e: EventCardProps) {
