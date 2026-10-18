@@ -6,6 +6,8 @@ import { events, pastEvents, rsvps, users } from "@/lib/db/schema";
 import { PastEventCard } from "@/components/PastEventCard";
 import { EventCard } from "@/components/EventCard";
 import { Avatar } from "@/components/Avatar";
+import { ProfileStatsBar } from "@/components/ProfileStatsBar";
+import { getFriendshipRelation, getProfileStats } from "@/lib/friends";
 import { dormName } from "@/lib/dorms";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +42,18 @@ export default async function UserProfilePage({
     .limit(1);
 
   const session = await auth();
-  const isMe = session?.user?.id && userRow?.id === session.user.id;
+  const isMe = Boolean(session?.user?.id && userRow?.id === session.user.id);
 
   const displayUsername = userRow?.username ?? decodeURIComponent(rawUsername);
   const displayName = userRow?.displayName || displayUsername;
+
+  const stats = userRow
+    ? await getProfileStats(userRow.id, userRow.username)
+    : { friendsCount: 0, eventsAttendedCount: 0 };
+
+  const relation = userRow
+    ? await getFriendshipRelation(session?.user?.id, userRow.id)
+    : { state: "none" as const, friendshipId: null };
 
   // Upcoming events this user is hosting
   const now = new Date();
@@ -59,6 +69,7 @@ export default async function UserProfilePage({
           dormSlug: events.dormSlug,
           capacity: events.capacity,
           tags: events.tags,
+          plannedDishes: events.plannedDishes,
           canceled: events.canceled,
           rsvpYesCount: sql<number>`(
             select count(*)::int from ${rsvps}
@@ -149,6 +160,17 @@ export default async function UserProfilePage({
           </div>
         </div>
       </section>
+
+      {/* Bar beneath the profile bar (Friends count, Events attended count, and Add friend / Unfriend button) */}
+      <ProfileStatsBar
+        username={displayUsername}
+        targetUserId={userRow?.id ?? null}
+        initialFriendsCount={stats.friendsCount}
+        eventsAttendedCount={stats.eventsAttendedCount}
+        isMe={isMe}
+        isSignedIn={Boolean(session?.user?.id)}
+        initialRelation={relation.state}
+      />
 
       {/* Upcoming hosted events */}
       {upcoming.length > 0 ? (
