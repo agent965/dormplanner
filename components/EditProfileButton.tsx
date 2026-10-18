@@ -23,13 +23,13 @@ export function EditProfileButton() {
             transform: translate(0px, 0px) rotate(0deg);
           }
           18% {
-            transform: translate(0px, 2px) rotate(7deg);
+            transform: translate(0px, 2px) rotate(-7deg);
           }
           45% {
-            transform: translate(-1px, -4px) rotate(-28deg);
+            transform: translate(1px, -4px) rotate(28deg);
           }
           78% {
-            transform: translate(0px, 0.5px) rotate(3deg);
+            transform: translate(0px, 0.5px) rotate(-3deg);
           }
           100% {
             transform: translate(0px, 0px) rotate(0deg);
@@ -90,7 +90,7 @@ export function EditProfileButton() {
           }
         }
         .pan-flip-active {
-          transform-origin: 22px 16px;
+          transform-origin: 13px 16px;
           animation: panFlipAnim 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .veggie-toss-l {

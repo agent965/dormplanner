@@ -112,18 +112,12 @@ export default async function UserProfilePage({
 
   return (
     <div className="space-y-6">
-      {isMe ? (
-        <div className="flex justify-end">
-          <EditProfileButton />
-        </div>
-      ) : null}
-
       {/* Profile card */}
       <section className="card p-5">
         <div className="flex items-start gap-4 flex-wrap">
           <Avatar src={userRow?.avatar} name={displayName} size={88} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="display text-2xl font-semibold leading-tight">
                 {displayName}
               </h1>
@@ -132,6 +126,7 @@ export default async function UserProfilePage({
                   @{displayUsername}
                 </span>
               ) : null}
+              {isMe ? <EditProfileButton /> : null}
             </div>
             {facts.length > 0 ? (
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[color:var(--muted)]">

@@ -82,7 +82,6 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         return;
       }
       setSaved(true);
-      router.push(`/users/${encodeURIComponent(initial.username)}`);
       router.refresh();
     } finally {
       setSaving(false);
@@ -240,9 +239,23 @@ export function ProfileForm({ initial }: { initial: Initial }) {
       <div className="flex items-center justify-end gap-3 pt-2 border-t border-[color:var(--border)]">
         <Link
           href={`/users/${encodeURIComponent(initial.username)}`}
-          className="text-sm text-[color:var(--muted)] hover:underline"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-neutral-400 bg-white text-neutral-800 text-sm font-medium hover:bg-neutral-50 transition-colors"
         >
-          View my profile
+          <span>View my profile</span>
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+          </svg>
         </Link>
         <button
           type="submit"
