@@ -87,6 +87,12 @@ if (!globalForDb.schemaSynced) {
     .query(`ALTER TABLE IF EXISTS "bring_items" ADD COLUMN IF NOT EXISTS "approved" boolean DEFAULT false NOT NULL;`)
     .catch(() => {});
   pool
+    .query(`ALTER TABLE IF EXISTS "bring_items" ADD COLUMN IF NOT EXISTS "category" text DEFAULT 'Other' NOT NULL;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "bring_items" ADD COLUMN IF NOT EXISTS "absolutely_necessary" boolean DEFAULT false NOT NULL;`)
+    .catch(() => {});
+  pool
     .query(`ALTER TABLE IF EXISTS "rsvps" ADD COLUMN IF NOT EXISTS "fingerprint" text;`)
     .catch(() => {});
   // Profile fields

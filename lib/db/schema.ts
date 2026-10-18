@@ -153,6 +153,8 @@ export const bringItems = pgTable(
       .references(() => events.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     quantity: integer("quantity").notNull().default(1),
+    category: text("category").notNull().default("Other"),
+    absolutelyNecessary: boolean("absolutely_necessary").notNull().default(false),
     note: text("note"),
     createdByName: text("created_by_name").notNull(),
     createdById: text("created_by_id").references(() => users.id, {

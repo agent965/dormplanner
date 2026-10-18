@@ -4,10 +4,21 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
+const CATEGORIES = [
+  "Ingredients",
+  "Cookware/Utensils",
+  "Food/Dishes",
+  "Other",
+] as const;
+
+type BringCategory = (typeof CATEGORIES)[number];
+
 type Item = {
   id: string;
   name: string;
   quantity: number;
+  category?: BringCategory;
+  absolutelyNecessary?: boolean;
   note: string | null;
   approved: boolean;
   createdByName: string;
@@ -41,6 +52,8 @@ export function BringList({
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [qty, setQty] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState<BringCategory | null>(null);
+  const [absolutelyNecessary, setAbsolutelyNecessary] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
 
@@ -53,8 +66,6 @@ export function BringList({
     if (actorKind === "user") {
       return !!userId && row.claimedById === userId;
     }
-    // Guests without a cookie yet have guestId=null; don't let that match
-    // other null values (items claimed by signed-in users).
     return !!guestId && row.claimedByGuestId === guestId;
   };
 
@@ -84,6 +95,10 @@ export function BringList({
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
+    if (!selectedCategory) {
+      setError("Please select one of the category tags.");
+      return;
+    }
     if (needsName) {
       setError("Set your name above first.");
       return;
@@ -94,7 +109,12 @@ export function BringList({
       const r = await fetch(`/api/events/${eventId}/items`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), quantity: qty }),
+        body: JSON.stringify({
+          name: name.trim(),
+          quantity: qty,
+          category: selectedCategory,
+          absolutelyNecessary: isHost ? absolutelyNecessary : false,
+        }),
       });
       if (!r.ok) {
         const data = await r.json().catch(() => ({}));
@@ -107,6 +127,8 @@ export function BringList({
       }
       setName("");
       setQty(1);
+      setSelectedCategory(null);
+      setAbsolutelyNecessary(false);
       refresh();
     } finally {
       setAdding(false);
@@ -132,22 +154,90 @@ export function BringList({
     refresh();
   }
 
-  const approved = items.filter((i) => i.approved);
-  const pending = items.filter((i) => !i.approved);
+  // Sort items with "Absolutely Necessary" to the top of the list
+  const sortedItems = [...items].sort((a, b) => {
+    const aNec = a.absolutelyNecessary ? 1 : 0;
+    const bNec = b.absolutelyNecessary ? 1 : 0;
+    return bNec - aNec;
+  });
 
   return (
     <div className="space-y-3">
       <ul className="space-y-2">
         {loading ? (
           <li className="text-sm text-[color:var(--muted)]">Loading list…</li>
-        ) : approved.length === 0 && pending.length === 0 ? (
+        ) : sortedItems.length === 0 ? (
           <li className="text-sm text-[color:var(--muted)]">
             No items yet. Add the first thing to bring.
           </li>
         ) : (
-          approved.map((item) => {
+          sortedItems.map((item) => {
             const myClaim = minesClaim(item);
             const claimed = !!(item.claimedById || item.claimedByGuestId);
+            const categoryLabel = item.category || "Other";
+            const isNecessary = Boolean(item.absolutelyNecessary);
+
+            if (!item.approved) {
+              return (
+                <li
+                  key={item.id}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-dashed border-gray-400 bg-gray-200/60 dark:bg-gray-800/40 p-3 text-gray-500 opacity-75"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{item.name}</span>
+                      {item.quantity > 1 ? (
+                        <span className="text-xs text-[color:var(--muted)]">×{item.quantity}</span>
+                      ) : null}
+                      {isNecessary ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-600 text-white border border-red-600">
+                          Absolutely Necessary
+                        </span>
+                      ) : null}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border border-gray-400 bg-white/70 text-gray-600">
+                        {categoryLabel}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--muted)]">
+                      Suggested by{" "}
+                      {item.createdById ? (
+                        <Link
+                          href={`/users/${encodeURIComponent(item.createdByName)}`}
+                          className="underline hover:text-[color:var(--husky-purple)]"
+                        >
+                          {item.createdByName}
+                        </Link>
+                      ) : (
+                        item.createdByName
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs italic text-[color:var(--muted)]">
+                      pending approval from host
+                    </p>
+                  </div>
+                  {isHost ? (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => patch(item.id, { action: "approve" })}
+                        className="text-xs px-2.5 py-1 rounded bg-[color:var(--husky-purple)] text-white font-medium"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Reject "${item.name}"?`)) patch(item.id, { action: "delete" });
+                        }}
+                        className="text-xs text-[color:var(--muted)] hover:text-[color:var(--danger)]"
+                        title="Reject"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            }
+
             return (
               <li
                 key={item.id}
@@ -169,6 +259,14 @@ export function BringList({
                     {item.quantity > 1 ? (
                       <span className="text-xs text-[color:var(--muted)]">×{item.quantity}</span>
                     ) : null}
+                    {isNecessary ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-600 text-white border border-red-600">
+                        Absolutely Necessary
+                      </span>
+                    ) : null}
+                    <span className="tag text-[11px]">
+                      {categoryLabel}
+                    </span>
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--muted)]">
                     {claimed ? (
@@ -206,7 +304,7 @@ export function BringList({
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {claimed ? (
                     myClaim || isHost ? (
                       <button
@@ -268,67 +366,47 @@ export function BringList({
         )}
       </ul>
 
-      {/* Pending suggestions: host-only view */}
-      {isHost && pending.length > 0 ? (
-        <div className="pt-2 space-y-2">
-          <div className="text-xs uppercase tracking-wide text-[color:var(--muted)] flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-[color:var(--husky-gold)]" />
-            Suggested by guests · needs your OK
-          </div>
-          <ul className="space-y-2">
-            {pending.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-dashed border-[color:var(--husky-gold)] bg-[color:var(--husky-gold)]/5 p-3 opacity-80"
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium italic">{item.name}</span>
-                    {item.quantity > 1 ? (
-                      <span className="text-xs text-[color:var(--muted)]">×{item.quantity}</span>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 text-xs text-[color:var(--muted)]">
-                    Suggested by{" "}
-                    {item.createdById ? (
-                      <Link
-                        href={`/users/${encodeURIComponent(item.createdByName)}`}
-                        className="underline hover:text-[color:var(--husky-purple)]"
-                      >
-                        {item.createdByName}
-                      </Link>
-                    ) : (
-                      item.createdByName
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => patch(item.id, { action: "approve" })}
-                    className="text-xs px-2 py-1 rounded bg-[color:var(--husky-purple)] text-white"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Reject "${item.name}"?`)) patch(item.id, { action: "delete" });
-                    }}
-                    className="text-xs text-[color:var(--muted)] hover:text-[color:var(--danger)]"
-                    title="Reject"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
       <form
         onSubmit={addItem}
-        className="rounded-lg border border-dashed border-[color:var(--border)] p-3 space-y-2"
+        className="rounded-lg border border-dashed border-[color:var(--border)] p-3 space-y-2.5"
       >
+        <div className="flex flex-wrap items-center gap-1.5">
+          {isHost ? (
+            <button
+              type="button"
+              onClick={() => setAbsolutelyNecessary((v) => !v)}
+              aria-pressed={absolutelyNecessary}
+              className={cn(
+                "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
+                absolutelyNecessary
+                  ? "bg-red-600 text-white border-red-600 ring-2 ring-red-600/30"
+                  : "bg-red-50 text-red-700 border-red-500 hover:bg-red-100"
+              )}
+            >
+              Absolutely Necessary
+            </button>
+          ) : null}
+          {CATEGORIES.map((cat) => {
+            const active = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                aria-pressed={active}
+                className={cn(
+                  "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
+                  active
+                    ? "bg-[color:var(--husky-purple)] text-white border-[color:var(--husky-purple)]"
+                    : "bg-[color:var(--surface)] text-[color:var(--foreground)] border-[color:var(--border)] hover:border-[color:var(--husky-purple)]"
+                )}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex gap-2">
           <input
             value={name}
@@ -347,7 +425,7 @@ export function BringList({
           />
           <button
             type="submit"
-            disabled={adding || !name.trim()}
+            disabled={adding || !name.trim() || !selectedCategory}
             className="px-3 py-2 text-sm font-medium rounded-md bg-[color:var(--accent)] text-[color:var(--accent-fg)] disabled:opacity-50"
           >
             {isHost ? "Add" : "Suggest"}
@@ -355,7 +433,7 @@ export function BringList({
         </div>
         {!isHost ? (
           <p className="text-[10px] text-[color:var(--muted)]">
-            Your suggestion goes to the host for approval before appearing on the list.
+            Select a category tag above. Your suggestion will require host approval before anyone can claim it.
           </p>
         ) : null}
         {error ? <p className="text-xs text-[color:var(--danger)]">{error}</p> : null}
@@ -363,3 +441,4 @@ export function BringList({
     </div>
   );
 }
+
