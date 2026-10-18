@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fredoka } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { FoodBackdrop } from "@/components/FoodBackdrop";
 import { auth } from "@/lib/auth";
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <FoodBackdrop />
         <Nav user={session?.user ?? null} />
         <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 sm:px-6">
           {children}

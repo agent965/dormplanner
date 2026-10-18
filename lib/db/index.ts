@@ -10,14 +10,23 @@ if (!connectionString) {
 }
 
 // Reuse the pool across hot reloads in dev.
-const globalForDb = globalThis as unknown as { pgPool?: Pool; schemaSynced?: boolean };
+const globalForDb = globalThis as unknown as {
+  pgPool?: Pool;
+  schemaSynced?: boolean;
+  lastCleanupMs?: number;
+};
 
 const pool =
   globalForDb.pgPool ??
   new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 10,
+    // Vercel runs each request in its own Lambda — each has its own pool, so
+    // keep max small or TigerData's connection cap gets blown by concurrent
+    // invocations. 2 is plenty per instance.
+    max: 2,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
   });
 
 const ensurePastEventsSql = `
@@ -75,7 +84,13 @@ export const db = drizzle(pool, { schema });
 export { schema };
 
 export async function cleanupExpiredEvents() {
-  await db.execute(sql.raw(ensurePastEventsSql));
+  // Throttle: at most once per 2 minutes per process. Prevents hammering
+  // TigerData's connection pool on every page load.
+  const now = Date.now();
+  if (globalForDb.lastCleanupMs && now - globalForDb.lastCleanupMs < 120_000) {
+    return;
+  }
+  globalForDb.lastCleanupMs = now;
 
   // Archive ended events that were NOT manually deleted/canceled by the host
   await db.execute(sql`

@@ -60,12 +60,67 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  position: relative;
+}
+
+/* Layered page background:
+   - Warm radial color blobs in the corners
+   - A soft polka-dot pattern (bread-crust color)
+   - A faint gingham tablecloth cross-hatch */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  pointer-events: none;
+  background-color: var(--background);
   background-image:
-    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--cheese) 10%, transparent) 0, transparent 20%),
-    radial-gradient(circle at 90% 20%, color-mix(in srgb, var(--tomato) 8%, transparent) 0, transparent 20%),
-    radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--herb) 10%, transparent) 0, transparent 20%),
-    radial-gradient(circle at 85% 90%, color-mix(in srgb, var(--husky-purple) 8%, transparent) 0, transparent 20%);
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--cheese) 14%, transparent) 0, transparent 24%),
+    radial-gradient(circle at 90% 18%, color-mix(in srgb, var(--tomato) 10%, transparent) 0, transparent 22%),
+    radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--herb) 12%, transparent) 0, transparent 22%),
+    radial-gradient(circle at 85% 92%, color-mix(in srgb, var(--husky-purple) 10%, transparent) 0, transparent 24%),
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--crust) 22%, transparent) 1.2px,
+      transparent 1.6px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--crust) 5%, transparent) 0 1px,
+      transparent 1px 36px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--crust) 5%, transparent) 0 1px,
+      transparent 1px 36px
+    );
+  background-size:
+    auto,
+    auto,
+    auto,
+    auto,
+    22px 22px,
+    auto,
+    auto;
   background-attachment: fixed;
+}
+
+@media (prefers-color-scheme: dark) {
+  body::before {
+    background-image:
+      radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--cheese) 8%, transparent) 0, transparent 24%),
+      radial-gradient(circle at 90% 18%, color-mix(in srgb, var(--tomato) 7%, transparent) 0, transparent 22%),
+      radial-gradient(circle at 20% 85%, color-mix(in srgb, var(--herb) 8%, transparent) 0, transparent 22%),
+      radial-gradient(circle at 85% 92%, color-mix(in srgb, var(--husky-purple) 10%, transparent) 0, transparent 24%),
+      radial-gradient(
+        circle at center,
+        color-mix(in srgb, var(--muted) 20%, transparent) 1.2px,
+        transparent 1.6px
+      );
+    background-size:
+      auto, auto, auto, auto,
+      22px 22px;
+  }
 }
 
 /* Headings: cute display font */
