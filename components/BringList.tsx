@@ -210,9 +210,23 @@ export function BringList({
                   ) : (
                     <button
                       onClick={() => patch(item.id, { action: "claim" })}
-                      className="text-xs px-2 py-1 rounded bg-[color:var(--accent)] text-[color:var(--accent-fg)]"
+                      className="group inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-1.5 rounded-full bg-[color:var(--accent)] text-[color:var(--accent-fg)] shadow-[0_2px_0_rgba(0,0,0,0.25)] hover:shadow-[0_3px_0_rgba(0,0,0,0.25)] hover:-translate-y-px active:translate-y-px active:shadow-[0_0_0_rgba(0,0,0,0.25)] transition-all whitespace-nowrap"
                     >
-                      I'll bring it
+                      I&apos;ll bring it
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      >
+                        <path d="M5 12h14M13 5l7 7-7 7" />
+                      </svg>
                     </button>
                   )}
                   {isHost ? (
