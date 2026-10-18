@@ -37,9 +37,6 @@ export function LandingHero() {
             Create an account
           </Link>
         </div>
-        <p className="mt-3 text-xs text-[color:var(--muted)]">
-          Free. Takes 10 seconds. Just pick a username.
-        </p>
       </section>
 
       {/* How it works */}
