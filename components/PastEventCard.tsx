@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { dietaryTagLabel, formatEventTime } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
+import type { PlannedDish } from "@/lib/db/schema";
+import { PlannedDishesList } from "./PlannedDishes";
 
 export type PastEventItem = {
   id: string;
@@ -13,6 +15,7 @@ export type PastEventItem = {
   endsAt: Date;
   capacity: number | null;
   tags: string[];
+  plannedDishes?: PlannedDish[] | null;
   rsvpYesCount: number;
   attendeeUsernames: string[];
   attendeeNames: string[];
@@ -38,7 +41,7 @@ export function PastEventCard({
   return (
     <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-xs text-[color:var(--muted)]">
             {formatEventTime(e.startsAt)} – {formatEventTime(e.endsAt)} ·{" "}
             {dormName(e.dormSlug)}
@@ -115,6 +118,7 @@ export function PastEventCard({
               {e.description}
             </p>
           ) : null}
+          <PlannedDishesList dishes={e.plannedDishes} />
         </div>
         <div className="text-right shrink-0">
           <div className="text-xs text-[color:var(--muted)]">attended</div>

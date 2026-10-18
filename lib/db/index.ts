@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS "past_events" (
   "ends_at" timestamp with time zone NOT NULL,
   "capacity" integer,
   "tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
+  "planned_dishes" jsonb DEFAULT '[]'::jsonb NOT NULL,
   "open_to_all_dorms" boolean DEFAULT false NOT NULL,
   "rsvp_yes_count" integer DEFAULT 0 NOT NULL,
   "attendee_usernames" text[] DEFAULT '{}' NOT NULL,
@@ -52,12 +53,16 @@ CREATE TABLE IF NOT EXISTS "past_events" (
 );
 ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "maybe_usernames" text[] DEFAULT '{}' NOT NULL;
 ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "maybe_names" text[] DEFAULT '{}' NOT NULL;
+ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "planned_dishes" jsonb DEFAULT '[]'::jsonb NOT NULL;
 `;
 
 if (!globalForDb.schemaSynced) {
   globalForDb.schemaSynced = true;
   pool
     .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "tags" "dietary_tag"[] DEFAULT '{}' NOT NULL;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "planned_dishes" jsonb DEFAULT '[]'::jsonb NOT NULL;`)
     .catch(() => {});
   pool
     .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "canceled" boolean DEFAULT false NOT NULL;`)
@@ -106,6 +111,7 @@ export async function cleanupExpiredEvents() {
       "ends_at",
       "capacity",
       "tags",
+      "planned_dishes",
       "open_to_all_dorms",
       "rsvp_yes_count",
       "attendee_usernames",
@@ -125,6 +131,7 @@ export async function cleanupExpiredEvents() {
       COALESCE(e.ends_at, e.starts_at + interval '2 hours'),
       e.capacity,
       e.tags,
+      COALESCE(e.planned_dishes, '[]'::jsonb),
       e.open_to_all_dorms,
       (
         SELECT count(*)::int FROM rsvps r

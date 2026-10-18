@@ -6,9 +6,16 @@ import {
   integer,
   boolean,
   pgEnum,
+  jsonb,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
+
+export type PlannedDish = {
+  name: string;
+  imageUrl?: string | null;
+  link?: string | null;
+};
 
 export const rsvpStatus = pgEnum("rsvp_status", ["yes", "maybe", "no"]);
 
@@ -57,6 +64,7 @@ export const events = pgTable(
     endsAt: timestamp("ends_at", { withTimezone: true }),
     capacity: integer("capacity"),
     tags: dietaryTag("tags").array().notNull().default([]),
+    plannedDishes: jsonb("planned_dishes").$type<PlannedDish[]>().notNull().default([]),
     openToAllDorms: boolean("open_to_all_dorms").notNull().default(false),
     canceled: boolean("canceled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -82,6 +90,7 @@ export const pastEvents = pgTable(
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     capacity: integer("capacity"),
     tags: dietaryTag("tags").array().notNull().default([]),
+    plannedDishes: jsonb("planned_dishes").$type<PlannedDish[]>().notNull().default([]),
     openToAllDorms: boolean("open_to_all_dorms").notNull().default(false),
     rsvpYesCount: integer("rsvp_yes_count").notNull().default(0),
     attendeeUsernames: text("attendee_usernames").array().notNull().default([]),

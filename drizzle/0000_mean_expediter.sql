@@ -33,6 +33,7 @@ CREATE TABLE "events" (
 	"ends_at" timestamp with time zone,
 	"capacity" integer,
 	"tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
+	"planned_dishes" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"open_to_all_dorms" boolean DEFAULT false NOT NULL,
 	"canceled" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -50,6 +51,7 @@ CREATE TABLE "past_events" (
 	"ends_at" timestamp with time zone NOT NULL,
 	"capacity" integer,
 	"tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
+	"planned_dishes" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"open_to_all_dorms" boolean DEFAULT false NOT NULL,
 	"rsvp_yes_count" integer DEFAULT 0 NOT NULL,
 	"attendee_usernames" text[] DEFAULT '{}' NOT NULL,

@@ -6,6 +6,12 @@ import { db } from "@/lib/db";
 import { events, rsvps } from "@/lib/db/schema";
 import { DIETARY_TAG_VALUES } from "@/lib/utils";
 
+const plannedDishSchema = z.object({
+  name: z.string().trim().min(1).max(1000),
+  imageUrl: z.string().max(5_000_000).nullable().optional(),
+  link: z.string().max(2000).nullable().optional(),
+});
+
 const updateSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().max(2000).nullable().optional(),
@@ -15,6 +21,7 @@ const updateSchema = z.object({
   endsAt: z.string().nullable().optional(),
   capacity: z.number().int().positive().max(1000).nullable().optional(),
   tags: z.array(z.enum(DIETARY_TAG_VALUES)).default([]),
+  plannedDishes: z.array(plannedDishSchema).optional(),
   openToAllDorms: z.boolean().optional(),
 });
 
@@ -87,6 +94,7 @@ export async function PATCH(
       endsAt: endsAtDate,
       capacity: v.capacity ?? null,
       tags: v.tags,
+      ...(v.plannedDishes !== undefined ? { plannedDishes: v.plannedDishes } : {}),
       openToAllDorms: v.openToAllDorms ?? false,
     })
     .where(eq(events.id, id));

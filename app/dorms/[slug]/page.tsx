@@ -30,6 +30,7 @@ export default async function DormFeed({
       dormSlug: events.dormSlug,
       capacity: events.capacity,
       tags: events.tags,
+      plannedDishes: events.plannedDishes,
       canceled: events.canceled,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
@@ -95,6 +96,7 @@ export default async function DormFeed({
       rsvpYesCount: e.rsvpYesCount,
       capacity: e.capacity,
       tags: e.tags,
+      plannedDishes: e.plannedDishes ?? [],
       canceled: e.canceled,
       goingList: rsvpLists?.going ?? [],
       maybeList: rsvpLists?.maybe ?? [],

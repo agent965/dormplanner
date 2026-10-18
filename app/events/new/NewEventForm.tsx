@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { UW_DORMS } from "@/lib/dorms";
 import { cn, DIETARY_TAGS, type DietaryTagValue } from "@/lib/utils";
+import type { PlannedDish } from "@/lib/db/schema";
+import { PlannedDishesEditor, PlannedDishesList } from "@/components/PlannedDishes";
 
 const EVENT_TEMPLATES = [
   { label: "Potluck", title: "Floor potluck", desc: "Everyone brings something. Add what you're bringing to the list." },
@@ -35,6 +37,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
   const [endsAt, setEndsAt] = useState("");
   const [capacity, setCapacity] = useState("");
   const [tags, setTags] = useState<DietaryTagValue[]>([]);
+  const [plannedDishes, setPlannedDishes] = useState<PlannedDish[]>([]);
   const [openToAll, setOpenToAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +84,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
           capacity: capacity ? parseInt(capacity) : undefined,
           tags,
+          plannedDishes,
           openToAllDorms: openToAll,
         }),
       });
@@ -128,17 +132,30 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
         />
       </label>
 
-      <label className="block">
-        <span className="text-xs text-[color:var(--muted)]">Description</span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={2000}
-          rows={4}
-          placeholder="What's the vibe? When should people show up?"
-          className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
+      <div>
+        <label className="block">
+          <span className="text-xs text-[color:var(--muted)]">Description</span>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={2000}
+            rows={4}
+            placeholder="What's the vibe? When should people show up?"
+            className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
+          />
+        </label>
+        <PlannedDishesList
+          dishes={plannedDishes}
+          onRemove={(idx) =>
+            setPlannedDishes((prev) => prev.filter((_, i) => i !== idx))
+          }
         />
-      </label>
+      </div>
+
+      <PlannedDishesEditor
+        dishes={plannedDishes}
+        onChange={setPlannedDishes}
+      />
 
       <div>
         <span className="text-xs text-[color:var(--muted)]">Dietary tags</span>

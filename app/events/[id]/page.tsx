@@ -7,6 +7,7 @@ import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
 import { GuestNameGate } from "@/components/GuestNameGate";
 import { HostEventActions } from "@/components/HostEventActions";
+import { PlannedDishesList } from "@/components/PlannedDishes";
 import {
   dietaryTagLabel,
   formatEventTime,
@@ -37,6 +38,7 @@ export default async function EventDetail({
       dormSlug: events.dormSlug,
       capacity: events.capacity,
       tags: events.tags,
+      plannedDishes: events.plannedDishes,
       openToAllDorms: events.openToAllDorms,
       canceled: events.canceled,
       hostId: events.hostId,
@@ -191,6 +193,7 @@ export default async function EventDetail({
         {row.description ? (
           <p className="whitespace-pre-wrap text-sm pt-2">{row.description}</p>
         ) : null}
+        <PlannedDishesList dishes={row.plannedDishes} />
         {isHost ? (
           <HostEventActions
             event={{
@@ -203,6 +206,7 @@ export default async function EventDetail({
               endsAt: row.endsAt ? new Date(row.endsAt).toISOString() : null,
               capacity: row.capacity,
               tags: row.tags ?? [],
+              plannedDishes: row.plannedDishes ?? [],
               openToAllDorms: row.openToAllDorms,
               yesCount,
             }}

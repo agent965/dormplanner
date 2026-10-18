@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UW_DORMS } from "@/lib/dorms";
 import { cn, DIETARY_TAGS, type DietaryTagValue } from "@/lib/utils";
+import type { PlannedDish } from "@/lib/db/schema";
+import { PlannedDishesEditor, PlannedDishesList } from "@/components/PlannedDishes";
 
 type EventData = {
   id: string;
@@ -15,6 +17,7 @@ type EventData = {
   endsAt?: string | null;
   capacity: number | null;
   tags: DietaryTagValue[];
+  plannedDishes?: PlannedDish[];
   openToAllDorms: boolean;
   yesCount: number;
 };
@@ -40,6 +43,9 @@ export function HostEventActions({ event }: { event: EventData }) {
     event.capacity != null ? String(event.capacity) : ""
   );
   const [tags, setTags] = useState<DietaryTagValue[]>(event.tags ?? []);
+  const [plannedDishes, setPlannedDishes] = useState<PlannedDish[]>(
+    event.plannedDishes ?? []
+  );
   const [openToAll, setOpenToAll] = useState(event.openToAllDorms);
 
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +65,7 @@ export function HostEventActions({ event }: { event: EventData }) {
     setEndsAt(event.endsAt ? toLocalInput(event.endsAt) : "");
     setCapacity(event.capacity != null ? String(event.capacity) : "");
     setTags(event.tags ?? []);
+    setPlannedDishes(event.plannedDishes ?? []);
     setOpenToAll(event.openToAllDorms);
     setCapacityError(null);
     setError(null);
@@ -106,6 +113,7 @@ export function HostEventActions({ event }: { event: EventData }) {
           endsAt: endsAt ? new Date(endsAt).toISOString() : null,
           capacity: parsedCap,
           tags,
+          plannedDishes,
           openToAllDorms: openToAll,
         }),
       });
@@ -207,16 +215,29 @@ export function HostEventActions({ event }: { event: EventData }) {
             />
           </label>
 
-          <label className="block">
-            <span className="text-xs text-[color:var(--muted)]">Description</span>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={2000}
-              rows={4}
-              className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
+          <div>
+            <label className="block">
+              <span className="text-xs text-[color:var(--muted)]">Description</span>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={2000}
+                rows={4}
+                className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
+              />
+            </label>
+            <PlannedDishesList
+              dishes={plannedDishes}
+              onRemove={(idx) =>
+                setPlannedDishes((prev) => prev.filter((_, i) => i !== idx))
+              }
             />
-          </label>
+          </div>
+
+          <PlannedDishesEditor
+            dishes={plannedDishes}
+            onChange={setPlannedDishes}
+          />
 
           <div>
             <span className="text-xs text-[color:var(--muted)]">Dietary tags</span>

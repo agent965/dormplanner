@@ -9,6 +9,8 @@ import {
   getInProgressRemaining,
 } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
+import type { PlannedDish } from "@/lib/db/schema";
+import { PlannedDishesList } from "./PlannedDishes";
 
 export type RsvpPerson = {
   name: string;
@@ -27,6 +29,7 @@ export type EventCardProps = {
   rsvpYesCount: number;
   capacity?: number | null;
   tags?: string[] | null;
+  plannedDishes?: PlannedDish[] | null;
   canceled?: boolean | null;
   pinned?: boolean;
   onTogglePin?: (id: string) => void;
@@ -105,7 +108,7 @@ export function EventCard(e: EventCardProps) {
 
   const content = (
     <div className="flex items-start justify-between gap-3">
-      <div>
+      <div className="min-w-0 flex-1">
         <div className="text-xs text-[color:var(--muted)]">
           {formatEventTime(startsAtDate)}
           {endsAtDate ? ` – ${formatEventTime(endsAtDate)}` : ""} ·{" "}
@@ -171,6 +174,11 @@ export function EventCard(e: EventCardProps) {
             {e.description}
           </p>
         ) : null}
+        <PlannedDishesList
+          dishes={e.plannedDishes}
+          insideLink={!e.canceled}
+          muted={!!e.canceled}
+        />
       </div>
       <div className="text-right">
         <div className="text-xs text-[color:var(--muted)]">going</div>
