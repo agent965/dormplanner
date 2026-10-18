@@ -7,7 +7,11 @@ import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
 import { GuestNameGate } from "@/components/GuestNameGate";
 import { HostEventActions } from "@/components/HostEventActions";
-import { dietaryTagLabel, formatEventTime } from "@/lib/utils";
+import {
+  dietaryTagLabel,
+  formatEventTime,
+  getInProgressRemaining,
+} from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
 import { readActor } from "@/lib/actor";
 
@@ -83,6 +87,10 @@ export default async function EventDetail({
 
   const full = row.capacity != null && yesCount >= row.capacity;
   const isHost = actor?.kind === "user" && actor.userId === row.hostId;
+  const inProgressLeft = getInProgressRemaining(
+    new Date(row.startsAt),
+    row.endsAt ? new Date(row.endsAt) : null
+  );
 
   return (
     <article className="space-y-6">
@@ -93,7 +101,14 @@ export default async function EventDetail({
           {dormName(row.dormSlug)}
           {row.location ? ` · ${row.location}` : ""}
         </div>
-        <h1 className="text-2xl font-semibold">{row.title}</h1>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="text-2xl font-semibold">{row.title}</h1>
+          {inProgressLeft ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[color:var(--success)] text-white">
+              In Progress, {inProgressLeft} left
+            </span>
+          ) : null}
+        </div>
         <div className="text-sm text-[color:var(--muted)]">
           Hosted by{" "}
           {row.hostName ? (

@@ -3,7 +3,7 @@ import { and, eq, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { cleanupExpiredEvents, db } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
-import { EventCard } from "@/components/EventCard";
+import { EventFeed } from "@/components/EventFeed";
 import { DormPicker } from "@/components/DormPicker";
 import { dormName } from "@/lib/dorms";
 
@@ -52,8 +52,23 @@ export default async function Home() {
     .from(events)
     .leftJoin(users, eq(events.hostId, users.id))
     .where(whereClause)
-    .orderBy(events.canceled, events.startsAt)
+    .orderBy(events.canceled, events.startsAt, sql`lower(${events.title})`)
     .limit(50);
+
+  const serializedEvents = rows.map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    startsAt: new Date(e.startsAt).toISOString(),
+    endsAt: e.endsAt ? new Date(e.endsAt).toISOString() : null,
+    location: e.location,
+    dormSlug: e.dormSlug,
+    hostName: e.hostName,
+    rsvpYesCount: e.rsvpYesCount,
+    capacity: e.capacity,
+    tags: e.tags,
+    canceled: e.canceled,
+  }));
 
   return (
     <div className="space-y-6">
@@ -104,45 +119,7 @@ export default async function Home() {
         ) : null}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium text-[color:var(--muted)] uppercase tracking-wide">
-          Upcoming
-        </h2>
-        {rows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[color:var(--border)] p-6 text-center text-sm text-[color:var(--muted)]">
-            Nothing on the calendar yet.
-            {me ? (
-              <>
-                {" "}
-                <Link href="/events/new" className="text-[color:var(--husky-purple)] underline">
-                  Start the first event.
-                </Link>
-              </>
-            ) : null}
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {rows.map((e) => (
-              <li key={e.id}>
-                <EventCard
-                  id={e.id}
-                  title={e.title}
-                  description={e.description}
-                  startsAt={new Date(e.startsAt)}
-                  endsAt={e.endsAt ? new Date(e.endsAt) : null}
-                  location={e.location}
-                  dormSlug={e.dormSlug}
-                  hostName={e.hostName}
-                  rsvpYesCount={e.rsvpYesCount}
-                  capacity={e.capacity}
-                  tags={e.tags}
-                  canceled={e.canceled}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <EventFeed events={serializedEvents} canCreate={!!me} />
     </div>
   );
 }

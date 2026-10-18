@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { and, eq, sql } from "drizzle-orm";
 import { cleanupExpiredEvents, db } from "@/lib/db";
 import { events, dorms, rsvps, users } from "@/lib/db/schema";
-import { EventCard } from "@/components/EventCard";
+import { EventFeed } from "@/components/EventFeed";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +39,22 @@ export default async function DormFeed({
     .from(events)
     .leftJoin(users, eq(events.hostId, users.id))
     .where(and(notEnded, eq(events.dormSlug, slug)))
-    .orderBy(events.canceled, events.startsAt);
+    .orderBy(events.canceled, events.startsAt, sql`lower(${events.title})`);
+
+  const serializedEvents = rows.map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    startsAt: new Date(e.startsAt).toISOString(),
+    endsAt: e.endsAt ? new Date(e.endsAt).toISOString() : null,
+    location: e.location,
+    dormSlug: e.dormSlug,
+    hostName: e.hostName,
+    rsvpYesCount: e.rsvpYesCount,
+    capacity: e.capacity,
+    tags: e.tags,
+    canceled: e.canceled,
+  }));
 
   return (
     <div className="space-y-4">
@@ -47,30 +62,7 @@ export default async function DormFeed({
         <div className="text-xs text-[color:var(--muted)]">{dorm.area}</div>
         <h1 className="text-xl font-semibold">{dorm.name}</h1>
       </header>
-      {rows.length === 0 ? (
-        <p className="text-sm text-[color:var(--muted)]">No upcoming events in this dorm yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {rows.map((e) => (
-            <li key={e.id}>
-              <EventCard
-                id={e.id}
-                title={e.title}
-                description={e.description}
-                startsAt={new Date(e.startsAt)}
-                endsAt={e.endsAt ? new Date(e.endsAt) : null}
-                location={e.location}
-                dormSlug={e.dormSlug}
-                hostName={e.hostName}
-                rsvpYesCount={e.rsvpYesCount}
-                capacity={e.capacity}
-                tags={e.tags}
-                canceled={e.canceled}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
+      <EventFeed events={serializedEvents} />
     </div>
   );
 }

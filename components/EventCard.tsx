@@ -1,13 +1,20 @@
+"use client";
+
 import Link from "next/link";
-import { cn, dietaryTagLabel, formatEventTime } from "@/lib/utils";
+import {
+  cn,
+  dietaryTagLabel,
+  formatEventTime,
+  getInProgressRemaining,
+} from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
 
-type EventCardProps = {
+export type EventCardProps = {
   id: string;
   title: string;
   description?: string | null;
-  startsAt: Date;
-  endsAt?: Date | null;
+  startsAt: Date | string;
+  endsAt?: Date | string | null;
   location?: string | null;
   dormSlug?: string | null;
   hostName?: string | null;
@@ -15,19 +22,36 @@ type EventCardProps = {
   capacity?: number | null;
   tags?: string[] | null;
   canceled?: boolean | null;
+  pinned?: boolean;
+  onTogglePin?: (id: string) => void;
+  nowMs?: number;
 };
 
 export function EventCard(e: EventCardProps) {
+  const startsAtDate =
+    typeof e.startsAt === "string" ? new Date(e.startsAt) : e.startsAt;
+  const endsAtDate =
+    e.endsAt == null
+      ? null
+      : typeof e.endsAt === "string"
+        ? new Date(e.endsAt)
+        : e.endsAt;
+
   const full = !e.canceled && e.capacity != null && e.rsvpYesCount >= e.capacity;
+  const inProgressLeft = !e.canceled
+    ? getInProgressRemaining(startsAtDate, endsAtDate, e.nowMs)
+    : null;
+
   const content = (
     <div className="flex items-start justify-between gap-3">
       <div>
         <div className="text-xs text-[color:var(--muted)]">
-          {formatEventTime(e.startsAt)}
-          {e.endsAt ? ` – ${formatEventTime(e.endsAt)}` : ""} · {dormName(e.dormSlug)}
+          {formatEventTime(startsAtDate)}
+          {endsAtDate ? ` – ${formatEventTime(endsAtDate)}` : ""} ·{" "}
+          {dormName(e.dormSlug)}
           {e.location ? ` · ${e.location}` : ""}
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-2.5">
+        <div className="mt-1 flex flex-wrap items-center gap-2">
           <h3
             className={cn(
               "text-lg font-semibold",
@@ -36,9 +60,14 @@ export function EventCard(e: EventCardProps) {
           >
             {e.title}
           </h3>
+          {onTogglePinRender(e.id, !!e.pinned, e.onTogglePin)}
           {e.canceled ? (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[color:var(--danger)] text-white">
               Canceled
+            </span>
+          ) : inProgressLeft ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[color:var(--success)] text-white">
+              In Progress, {inProgressLeft} left
             </span>
           ) : null}
         </div>
@@ -94,5 +123,39 @@ export function EventCard(e: EventCardProps) {
     >
       {content}
     </Link>
+  );
+}
+
+function onTogglePinRender(
+  id: string,
+  pinned: boolean,
+  onTogglePin?: (id: string) => void
+) {
+  return (
+    <button
+      type="button"
+      onClick={(ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        onTogglePin?.(id);
+      }}
+      aria-label={pinned ? "Unpin event" : "Pin event"}
+      title={pinned ? "Unpin from Tracking" : "Pin to Tracking"}
+      className="inline-flex items-center justify-center p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-transform active:scale-95 cursor-pointer"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill={pinned ? "#dc2626" : "#ffffff"}
+        stroke={pinned ? "#dc2626" : "#000000"}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 17v5" />
+        <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+      </svg>
+    </button>
   );
 }

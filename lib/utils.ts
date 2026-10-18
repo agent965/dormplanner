@@ -64,3 +64,26 @@ export function dietaryTagLabel(v: string): string {
   return DIETARY_TAGS.find((d) => d.v === v)?.label ?? v;
 }
 
+export function getInProgressRemaining(
+  startsAt: Date,
+  endsAt?: Date | null,
+  nowMs: number = Date.now()
+): string | null {
+  const startMs = startsAt.getTime();
+  const endMs = endsAt ? endsAt.getTime() : startMs + 2 * 60 * 60 * 1000;
+  if (nowMs < startMs || nowMs >= endMs) return null;
+
+  const diffMs = endMs - nowMs;
+  const totalMins = Math.max(1, Math.ceil(diffMs / 60000));
+  if (totalMins < 60) return `${totalMins}m`;
+  if (totalMins < 24 * 60) {
+    const hrs = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
+    return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+  }
+  const days = Math.floor(totalMins / (24 * 60));
+  const hrs = Math.floor((totalMins % (24 * 60)) / 60);
+  return hrs > 0 ? `${days}d ${hrs}h` : `${days}d`;
+}
+
+
