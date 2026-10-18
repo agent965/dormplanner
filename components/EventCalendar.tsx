@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn, formatEventTime } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
+
+const STORAGE_KEY = "dormplanner_tracked_events";
+const SEEN_CANCELED_KEY = "dormplanner_seen_canceled_events";
+const DISMISSED_CANCELED_KEY = "dormplanner_dismissed_canceled_events";
 
 export type CalendarEvent = {
   id: string;
@@ -13,6 +17,7 @@ export type CalendarEvent = {
   dormSlug: string | null;
   location: string | null;
   canceled: boolean;
+  isUserRsvpd?: boolean;
 };
 
 type Props = { events: CalendarEvent[] };
@@ -42,12 +47,63 @@ const DOW = ["S", "M", "T", "W", "T", "F", "S"];
 export function EventCalendar({ events }: Props) {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
   const [selected, setSelected] = useState<Date | null>(() => new Date());
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [seenCanceledIds, setSeenCanceledIds] = useState<string[]>([]);
+  const [dismissedCanceledIds, setDismissedCanceledIds] = useState<string[]>([]);
   const today = new Date();
+
+  useEffect(() => {
+    try {
+      const rawPinned = localStorage.getItem(STORAGE_KEY);
+      if (rawPinned) {
+        const parsed = JSON.parse(rawPinned);
+        if (Array.isArray(parsed)) {
+          setPinnedIds(parsed.filter((x): x is string => typeof x === "string"));
+        }
+      }
+
+      const rawSeen = localStorage.getItem(SEEN_CANCELED_KEY);
+      if (rawSeen) {
+        const parsed = JSON.parse(rawSeen);
+        if (Array.isArray(parsed)) {
+          setSeenCanceledIds(parsed.filter((x): x is string => typeof x === "string"));
+        }
+      }
+
+      const rawDismissed = localStorage.getItem(DISMISSED_CANCELED_KEY);
+      if (rawDismissed) {
+        const parsed = JSON.parse(rawDismissed);
+        if (Array.isArray(parsed)) {
+          setDismissedCanceledIds(parsed.filter((x): x is string => typeof x === "string"));
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  // Filter out canceled events that are no longer visible on the main page:
+  // - If dismissed / unpinned while canceled -> deleted from calendar
+  // - If pinned -> stays until unpinned
+  // - If not pinned -> deleted if user was not RSVP'd or already seen and removed from main page
+  const visibleEvents = useMemo(() => {
+    return events.filter((e) => {
+      if (e.canceled) {
+        if (dismissedCanceledIds.includes(e.id)) return false;
+        const isPinned = pinnedIds.includes(e.id);
+        if (!isPinned) {
+          if (!e.isUserRsvpd) return false;
+          if (seenCanceledIds.includes(e.id)) return false;
+        }
+      }
+      return true;
+    });
+  }, [events, dismissedCanceledIds, pinnedIds, seenCanceledIds]);
 
   // Group events by local-day key
   const byDay = useMemo(() => {
     const m = new Map<string, CalendarEvent[]>();
-    for (const e of events) {
+    for (const e of visibleEvents) {
       const d = new Date(e.startsAt);
       const k = dayKey(d);
       const arr = m.get(k) ?? [];
@@ -58,7 +114,7 @@ export function EventCalendar({ events }: Props) {
       arr.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
     }
     return m;
-  }, [events]);
+  }, [visibleEvents]);
 
   // Build 6 weeks × 7 days of cells starting from the Sunday on or before day 1
   const cells = useMemo(() => {
@@ -191,15 +247,9 @@ export function EventCalendar({ events }: Props) {
             </p>
           ) : (
             <ul className="space-y-2">
-              {selectedEvents.map((e) => (
-                <li key={e.id}>
-                  <Link
-                    href={`/events/${e.id}`}
-                    className={cn(
-                      "block rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3 hover:border-[color:var(--husky-purple)] transition-colors",
-                      e.canceled && "opacity-60"
-                    )}
-                  >
+              {selectedEvents.map((e) => {
+                const cardContent = (
+                  <>
                     <div className="text-xs text-[color:var(--muted)]">
                       {formatEventTime(new Date(e.startsAt))} ·{" "}
                       {dormName(e.dormSlug)}
@@ -208,19 +258,39 @@ export function EventCalendar({ events }: Props) {
                     <div
                       className={cn(
                         "mt-0.5 font-medium",
-                        e.canceled && "line-through"
+                        e.canceled && "line-through text-[color:var(--muted)]"
                       )}
                     >
                       {e.title}
                       {e.canceled ? (
-                        <span className="ml-2 text-xs text-[color:var(--danger)]">
+                        <span className="ml-2 text-xs font-semibold text-[color:var(--danger)]">
                           canceled
                         </span>
                       ) : null}
                     </div>
-                  </Link>
-                </li>
-              ))}
+                  </>
+                );
+
+                return (
+                  <li key={e.id}>
+                    {e.canceled ? (
+                      <div
+                        aria-disabled="true"
+                        className="block rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-200/60 dark:bg-neutral-800/60 p-3 opacity-60 cursor-not-allowed select-none"
+                      >
+                        {cardContent}
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/events/${e.id}`}
+                        className="block rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3 hover:border-[color:var(--husky-purple)] transition-colors"
+                      >
+                        {cardContent}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -1,14 +1,14 @@
-import { and, gte, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db, ensureEventRoleColumns } from "@/lib/db";
-import { events } from "@/lib/db/schema";
+import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
+import { bringItems, events, rsvps } from "@/lib/db/schema";
 import { EventCalendar, type CalendarEvent } from "@/components/EventCalendar";
 import { getFriendIds, visibleEventsCondition } from "@/lib/friends";
 
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
-  await ensureEventRoleColumns();
+  await Promise.all([cleanupExpiredEvents(), ensureEventRoleColumns()]);
   const session = await auth();
   const viewerId = session?.user?.id ?? null;
   const friendIds = await getFriendIds(viewerId);
@@ -28,6 +28,8 @@ export default async function CalendarPage() {
       dormSlug: events.dormSlug,
       location: events.location,
       canceled: events.canceled,
+      dishwasherClaimedById: events.dishwasherClaimedById,
+      cookClaimedById: events.cookClaimedById,
     })
     .from(events)
     .where(
@@ -39,6 +41,48 @@ export default async function CalendarPage() {
     )
     .orderBy(events.startsAt);
 
+  const userRsvpdEventIds = new Set<string>();
+  if (viewerId && rows.length > 0) {
+    const eventIds = rows.map((r) => r.id);
+    const rsvpRows = await db
+      .select({
+        eventId: rsvps.eventId,
+        userId: rsvps.userId,
+      })
+      .from(rsvps)
+      .where(
+        and(
+          inArray(rsvps.eventId, eventIds),
+          eq(rsvps.userId, viewerId)
+        )
+      );
+
+    for (const r of rsvpRows) {
+      userRsvpdEventIds.add(r.eventId);
+    }
+    for (const r of rows) {
+      if (
+        (r.dishwasherClaimedById && r.dishwasherClaimedById === viewerId) ||
+        (r.cookClaimedById && r.cookClaimedById === viewerId)
+      ) {
+        userRsvpdEventIds.add(r.id);
+      }
+    }
+
+    const claimedItems = await db
+      .select({ eventId: bringItems.eventId })
+      .from(bringItems)
+      .where(
+        and(
+          inArray(bringItems.eventId, eventIds),
+          eq(bringItems.claimedById, viewerId)
+        )
+      );
+    for (const item of claimedItems) {
+      userRsvpdEventIds.add(item.eventId);
+    }
+  }
+
   const serialized: CalendarEvent[] = rows.map((e) => ({
     id: e.id,
     title: e.title,
@@ -47,6 +91,7 @@ export default async function CalendarPage() {
     dormSlug: e.dormSlug,
     location: e.location,
     canceled: e.canceled,
+    isUserRsvpd: userRsvpdEventIds.has(e.id),
   }));
 
   return (
