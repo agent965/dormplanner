@@ -19,7 +19,7 @@ const patchSchema = z.object({
   pronouns: z.string().trim().max(30).nullable().optional(),
   avatar: z
     .string()
-    .max(MAX_AVATAR_LEN, "Image too large — try a smaller photo")
+    .max(MAX_AVATAR_LEN, "Image too large, try a smaller photo")
     .nullable()
     .optional(),
 });

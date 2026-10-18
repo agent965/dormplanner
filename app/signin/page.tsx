@@ -24,7 +24,7 @@ export default async function SignIn({
         />
         <h1 className="text-2xl font-semibold">Sign in to host</h1>
         <p className="text-sm text-[color:var(--muted)]">
-          You only need an account to create events. RSVPs don't require sign-in.
+          Only hosts need an account. You can RSVP to events without one!
         </p>
       </div>
 

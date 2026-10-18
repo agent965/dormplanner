@@ -163,7 +163,7 @@ export default async function Home() {
                   "Pick your dorm below to filter the feed."
                 )
               ) : (
-                <>Browse and RSVP freely — no account needed. Sign in with a username to host your own.</>
+                <>Browse and RSVP freely, no account needed! Sign in with a username to host your own.</>
               )}
             </p>
           </div>

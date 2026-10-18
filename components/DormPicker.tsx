@@ -42,7 +42,7 @@ export function DormPicker({
           defaultValue={currentDormSlug ?? ""}
           className="mt-1 bg-transparent border border-[color:var(--border)] rounded-md px-2 py-1 text-sm text-[color:var(--foreground)]"
         >
-          <option value="">— pick a dorm —</option>
+          <option value="">Pick a dorm</option>
           {UW_DORMS.map((d) => (
             <option key={d.slug} value={d.slug}>
               {d.name}

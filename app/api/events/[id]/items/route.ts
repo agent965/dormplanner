@@ -23,7 +23,7 @@ async function getHostId(eventId: string): Promise<string | null> {
   return e?.hostId ?? null;
 }
 
-// GET /api/events/:id/items — approved items for everyone; host also sees pending suggestions
+// GET /api/events/:id/items: approved items for everyone; host also sees pending suggestions
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id: eventId } = await ctx.params;
   const [actor, hostId] = await Promise.all([readActor(), getHostId(eventId)]);
@@ -55,7 +55,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   return NextResponse.json({ items: rows, isHost });
 }
 
-// POST /api/events/:id/items — anyone can suggest; host-added items are auto-approved
+// POST /api/events/:id/items: anyone can suggest; host-added items are auto-approved
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id: eventId } = await ctx.params;
   const body = await req.json();

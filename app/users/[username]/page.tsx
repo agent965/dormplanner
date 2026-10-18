@@ -148,7 +148,7 @@ export default async function UserProfilePage({
             ) : (
               <p className="mt-3 text-sm text-[color:var(--muted)] italic">
                 {isMe
-                  ? "No bio yet — "
+                  ? "No bio yet, "
                   : `${displayName} hasn't written a bio yet.`}
                 {isMe ? (
                   <Link href="/profile" className="underline">

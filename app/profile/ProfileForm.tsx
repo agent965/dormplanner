@@ -127,7 +127,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             </button>
           ) : (
             <span className="text-xs text-[color:var(--muted)]">
-              Square JPG/PNG — we resize to 256px.
+              Square JPG or PNG works best. We'll resize to 256px.
             </span>
           )}
         </div>
@@ -161,7 +161,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
           onChange={(e) => setBio(e.target.value)}
           maxLength={500}
           rows={3}
-          placeholder="A short intro — what you love to cook, when you're free, etc."
+          placeholder="A short intro! What you love to cook, when you're free, any fun facts..."
           className="w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
         />
         <Hint>{bio.length}/500</Hint>
@@ -174,7 +174,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             onChange={(e) => setCampus(e.target.value)}
             className="w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm text-[color:var(--foreground)]"
           >
-            <option value="">—</option>
+            <option value="">None</option>
             {UW_CAMPUSES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -188,7 +188,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             onChange={(e) => setYear(e.target.value)}
             className="w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm text-[color:var(--foreground)]"
           >
-            <option value="">—</option>
+            <option value="">None</option>
             {UW_YEARS.map((y) => (
               <option key={y} value={y}>
                 {y}
@@ -214,7 +214,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             onChange={(e) => setDormSlug(e.target.value)}
             className="w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm text-[color:var(--foreground)]"
           >
-            <option value="">—</option>
+            <option value="">No dorm</option>
             {UW_DORMS.map((d) => (
               <option key={d.slug} value={d.slug}>
                 {d.name}

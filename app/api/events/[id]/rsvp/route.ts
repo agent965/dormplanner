@@ -105,7 +105,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       updatedAt: now,
     });
   } catch (e: unknown) {
-    // Unique index collision on (event_id, fingerprint) — someone already
+    // Unique index collision on (event_id, fingerprint): someone already
     // RSVP'd from this device with a different cookie.
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("rsvps_event_fingerprint_uidx") || msg.toLowerCase().includes("unique")) {
