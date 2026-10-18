@@ -138,7 +138,7 @@ export function EventCard(e: EventCardProps) {
               renderPersonBubble(
                 p,
                 `yes-${p.name}-${i}`,
-                "bg-[#007FFF] text-white border border-[#007FFF]"
+                "bg-[color:var(--crust)] text-white border border-[color:var(--crust)]"
               )
             )}
             {maybe.map((p, i) =>
