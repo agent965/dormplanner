@@ -14,14 +14,51 @@ export default async function Home() {
   await cleanupExpiredEvents();
 
   const session = await auth();
-  const me = session?.user?.id
-    ? (
-        await db
-          .select({ dormSlug: users.dormSlug, floor: users.floor, name: users.username })
-          .from(users)
-          .where(eq(users.id, session.user.id))
-      )[0] ?? null
-    : null;
+  if (!session?.user?.id) {
+    return (
+      <div className="max-w-xl mx-auto mt-10 sm:mt-16 space-y-8">
+        <div
+          className="card p-6 sm:p-8 space-y-3"
+          style={{
+            borderWidth: 2,
+            borderColor: "color-mix(in srgb, var(--crust) 30%, var(--border))",
+            boxShadow:
+              "0 2px 0 color-mix(in srgb, var(--crust) 40%, transparent), 0 10px 30px -8px color-mix(in srgb, var(--crust) 25%, transparent)",
+          }}
+        >
+          <h1 className="display text-3xl sm:text-4xl font-bold tracking-tight">
+            Welcome to DormPlanner!
+          </h1>
+          <p className="text-sm sm:text-base text-[color:var(--muted)] text-right">
+            Plan, Join, and Delegate Responsibility to escape the Dining Hall, together!
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-4">
+          <Link
+            href="/signin"
+            className="w-full max-w-md py-3.5 px-6 rounded-xl bg-[color:var(--husky-purple)] text-white text-center text-base font-semibold shadow-sm hover:opacity-90 transition-opacity"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/signup"
+            className="w-full max-w-md py-3.5 px-6 rounded-xl border-2 border-[color:var(--husky-purple)] bg-[color:var(--surface)] text-[color:var(--husky-purple)] text-center text-base font-semibold shadow-sm hover:bg-[color:var(--husky-purple)] hover:text-white transition-colors"
+          >
+            Create an Account
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const me =
+    (
+      await db
+        .select({ dormSlug: users.dormSlug, floor: users.floor, name: users.username })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+    )[0] ?? null;
 
   const notEnded = sql`COALESCE(${events.endsAt}, ${events.startsAt} + interval '2 hours') > now()`;
   // Signed-in with a dorm: show that dorm + open-to-all. Otherwise show everything.

@@ -22,18 +22,22 @@ export function Nav({ user }: { user: NavUser }) {
             </span>
             <span>dormplanner</span>
           </Link>
-          <Link
-            href="/calendar"
-            className="text-sm font-medium text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
-          >
-            Calendar
-          </Link>
-          <Link
-            href="/history"
-            className="text-sm font-medium text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
-          >
-            My history
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/calendar"
+                className="text-sm font-medium text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
+              >
+                Calendar
+              </Link>
+              <Link
+                href="/history"
+                className="text-sm font-medium text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
+              >
+                My history
+              </Link>
+            </>
+          ) : null}
         </div>
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
@@ -65,7 +69,7 @@ export function Nav({ user }: { user: NavUser }) {
               href="/signin"
               className="px-3 py-1.5 rounded-full border-2 border-[color:var(--husky-purple)] text-[color:var(--husky-purple)] font-semibold hover:bg-[color:var(--husky-purple)] hover:text-white transition-colors"
             >
-              Sign in to host
+              Sign in
             </Link>
           )}
         </nav>

@@ -22,9 +22,9 @@ export default async function SignUp({
           style={{ background: "var(--husky-purple)" }}
           aria-hidden
         />
-        <h1 className="text-2xl font-semibold">Create a host account</h1>
+        <h1 className="text-2xl font-semibold">Create an Account</h1>
         <p className="text-sm text-[color:var(--muted)]">
-          Pick a username so other huskies know who's cooking!
+          Pick a username so other huskies know who&apos;s cooking!
         </p>
       </div>
       <SignupForm from={from ?? "/"} />

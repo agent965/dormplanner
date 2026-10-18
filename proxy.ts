@@ -1,18 +1,16 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-// Only these paths require a signed-in user. Everything else is public.
-const AUTH_REQUIRED_PATHS: string[] = ["/events/new"];
-// POST /api/events (create event) is guarded inside the route itself.
+// Public paths accessible without signing in
+const PUBLIC_PATHS = ["/", "/signin", "/signup"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const needsAuth = AUTH_REQUIRED_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
-  );
-  if (needsAuth && !req.auth) {
-    const url = new URL("/signin", req.url);
-    url.searchParams.set("from", pathname);
+  const isPublic =
+    PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/api/auth");
+
+  if (!isPublic && !req.auth) {
+    const url = new URL("/", req.url);
     return NextResponse.redirect(url);
   }
 });

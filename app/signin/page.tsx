@@ -22,9 +22,9 @@ export default async function SignIn({
           style={{ background: "var(--husky-purple)" }}
           aria-hidden
         />
-        <h1 className="text-2xl font-semibold">Sign in to host</h1>
+        <h1 className="text-2xl font-semibold">Sign In</h1>
         <p className="text-sm text-[color:var(--muted)]">
-          Only hosts need an account. You can RSVP to events without one!
+          Sign in to view and join dorm events, coordinate dishes, and connect with friends.
         </p>
       </div>
 
