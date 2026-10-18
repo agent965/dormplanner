@@ -159,6 +159,7 @@ export function EventFeed({
   const [includeOpenToAll, setIncludeOpenToAll] = useState(true);
   const [selectedDietary, setSelectedDietary] = useState<DietaryTagValue[]>([]);
   const [selectedLookingFor, setSelectedLookingFor] = useState<string[]>([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     try {
@@ -326,10 +327,10 @@ export function EventFeed({
     <div className="space-y-6">
       {/* Overhauled Filtering System Card */}
       <section className="card p-5 space-y-4">
-        {/* Introduction to the filtering system */}
+        {/* Introduction to the filtering system with Collapse Toggle */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2 flex-wrap">
               <svg
                 width="18"
                 height="18"
@@ -345,23 +346,57 @@ export function EventFeed({
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
               Filter &amp; Search Events
+              {hasActiveFilters ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[color:var(--husky-purple)] text-white">
+                  Active
+                </span>
+              ) : null}
             </h2>
             <p className="mt-1 text-xs text-[color:var(--muted)] max-w-xl">
               Welcome to the event filtering system! Find meals and gatherings happening around campus — filter by dorm building &amp; floor, dietary restrictions, roles needed, or search by keyword and username.
             </p>
           </div>
-          {userDormSlug && dormFilter !== userDormSlug ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            {userDormSlug && dormFilter !== userDormSlug ? (
+              <button
+                type="button"
+                onClick={handleResetToMyDorm}
+                className="text-xs px-2.5 py-1 rounded-full border border-[color:var(--border)] hover:border-[color:var(--husky-purple)] text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
+              >
+                My dorm ({dormName(userDormSlug)})
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={handleResetToMyDorm}
-              className="text-xs px-2.5 py-1 rounded-full border border-[color:var(--border)] hover:border-[color:var(--husky-purple)] text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
+              onClick={() => setIsCollapsed((prev) => !prev)}
+              aria-expanded={!isCollapsed}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border border-[color:var(--border)] hover:border-[color:var(--husky-purple)] hover:text-[color:var(--husky-purple)] transition-colors cursor-pointer"
             >
-              Back to my dorm ({dormName(userDormSlug)})
+              <span>{isCollapsed ? "Expand filters" : "Collapse"}</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={cn(
+                  "transition-transform duration-200",
+                  !isCollapsed && "rotate-180"
+                )}
+                aria-hidden
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </button>
-          ) : null}
+          </div>
         </div>
 
-        {/* 1. Keyword search and user search in a search bar */}
+        {!isCollapsed ? (
+          <div className="space-y-4 pt-1">
+            {/* 1. Keyword search and user search in a search bar */}
         <div className="relative">
           <svg
             width="16"
@@ -536,6 +571,8 @@ export function EventFeed({
             })}
           </div>
         </div>
+      </div>
+    ) : null}
 
         {/* Bit of text representing the events being filtered, placed below the bar */}
         <div className="flex items-center justify-between gap-3 flex-wrap pt-3 border-t border-[color:var(--border)] text-xs sm:text-sm">
