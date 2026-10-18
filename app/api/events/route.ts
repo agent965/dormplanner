@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, ensureEventRoleColumns } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { DIETARY_TAG_VALUES, newId } from "@/lib/utils";
 
@@ -21,10 +21,15 @@ const createSchema = z.object({
   capacity: z.number().int().positive().max(1000).optional(),
   tags: z.array(z.enum(DIETARY_TAG_VALUES)).default([]),
   plannedDishes: z.array(plannedDishSchema).default([]),
+  lookingForDishwasher: z.boolean().optional().default(false),
+  lookingForCook: z.boolean().optional().default(false),
+  lookingForIngredients: z.boolean().optional().default(false),
+  lookingForCookware: z.boolean().optional().default(false),
   openToAllDorms: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {
+  await ensureEventRoleColumns();
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -56,8 +61,13 @@ export async function POST(req: Request) {
     capacity: v.capacity ?? null,
     tags: v.tags,
     plannedDishes: v.plannedDishes,
+    lookingForDishwasher: v.lookingForDishwasher ?? false,
+    lookingForCook: v.lookingForCook ?? false,
+    lookingForIngredients: v.lookingForIngredients ?? false,
+    lookingForCookware: v.lookingForCookware ?? false,
     openToAllDorms: v.openToAllDorms ?? false,
   });
   return NextResponse.json({ id });
 }
+
 

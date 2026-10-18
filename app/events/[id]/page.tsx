@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { cleanupExpiredEvents, db } from "@/lib/db";
+import { cleanupExpiredEvents, db, ensureEventRoleColumns } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
 import { GuestNameGate } from "@/components/GuestNameGate";
 import { HostEventActions } from "@/components/HostEventActions";
 import { PlannedDishesList } from "@/components/PlannedDishes";
+import { EventRolesAndLookingFor } from "@/components/LookingForSection";
 import {
   dietaryTagLabel,
   formatEventTime,
@@ -23,7 +24,7 @@ export default async function EventDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await cleanupExpiredEvents();
+  await Promise.all([cleanupExpiredEvents(), ensureEventRoleColumns()]);
 
   const { id } = await params;
 
@@ -39,6 +40,16 @@ export default async function EventDetail({
       capacity: events.capacity,
       tags: events.tags,
       plannedDishes: events.plannedDishes,
+      lookingForDishwasher: events.lookingForDishwasher,
+      lookingForCook: events.lookingForCook,
+      lookingForIngredients: events.lookingForIngredients,
+      lookingForCookware: events.lookingForCookware,
+      dishwasherClaimedById: events.dishwasherClaimedById,
+      dishwasherClaimedByGuestId: events.dishwasherClaimedByGuestId,
+      dishwasherClaimedByName: events.dishwasherClaimedByName,
+      cookClaimedById: events.cookClaimedById,
+      cookClaimedByGuestId: events.cookClaimedByGuestId,
+      cookClaimedByName: events.cookClaimedByName,
       openToAllDorms: events.openToAllDorms,
       canceled: events.canceled,
       hostId: events.hostId,
@@ -207,6 +218,10 @@ export default async function EventDetail({
               capacity: row.capacity,
               tags: row.tags ?? [],
               plannedDishes: row.plannedDishes ?? [],
+              lookingForDishwasher: row.lookingForDishwasher,
+              lookingForCook: row.lookingForCook,
+              lookingForIngredients: row.lookingForIngredients,
+              lookingForCookware: row.lookingForCookware,
               openToAllDorms: row.openToAllDorms,
               yesCount,
             }}
@@ -234,6 +249,27 @@ export default async function EventDetail({
         />
       </section>
 
+      <EventRolesAndLookingFor
+        eventId={row.id}
+        initial={{
+          lookingForDishwasher: row.lookingForDishwasher,
+          lookingForCook: row.lookingForCook,
+          lookingForIngredients: row.lookingForIngredients,
+          lookingForCookware: row.lookingForCookware,
+          dishwasherClaimedById: row.dishwasherClaimedById,
+          dishwasherClaimedByGuestId: row.dishwasherClaimedByGuestId,
+          dishwasherClaimedByName: row.dishwasherClaimedByName,
+          cookClaimedById: row.cookClaimedById,
+          cookClaimedByGuestId: row.cookClaimedByGuestId,
+          cookClaimedByName: row.cookClaimedByName,
+        }}
+        actorKind={actor?.kind ?? "guest"}
+        userId={actor?.kind === "user" ? actor.userId : null}
+        guestId={actor?.kind === "guest" ? actor.guestId : null}
+        initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
+        isHost={isHost}
+      />
+
       <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
         <div className="flex items-baseline justify-between">
           <h2 className="font-medium">What to bring</h2>
@@ -253,3 +289,4 @@ export default async function EventDetail({
     </article>
   );
 }
+

@@ -6,6 +6,10 @@ import { UW_DORMS } from "@/lib/dorms";
 import { cn, DIETARY_TAGS, type DietaryTagValue } from "@/lib/utils";
 import type { PlannedDish } from "@/lib/db/schema";
 import { PlannedDishesEditor, PlannedDishesList } from "@/components/PlannedDishes";
+import {
+  LookingForEditor,
+  type LookingForState,
+} from "@/components/LookingForSection";
 
 const EVENT_TEMPLATES = [
   { label: "Potluck", title: "Floor potluck", desc: "Everyone brings something. Add what you're bringing to the list." },
@@ -38,6 +42,12 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
   const [capacity, setCapacity] = useState("");
   const [tags, setTags] = useState<DietaryTagValue[]>([]);
   const [plannedDishes, setPlannedDishes] = useState<PlannedDish[]>([]);
+  const [lookingFor, setLookingFor] = useState<LookingForState>({
+    lookingForDishwasher: false,
+    lookingForCook: false,
+    lookingForIngredients: false,
+    lookingForCookware: false,
+  });
   const [openToAll, setOpenToAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +95,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           capacity: capacity ? parseInt(capacity) : undefined,
           tags,
           plannedDishes,
+          ...lookingFor,
           openToAllDorms: openToAll,
         }),
       });
@@ -177,6 +188,8 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           ))}
         </div>
       </div>
+
+      <LookingForEditor state={lookingFor} onChange={setLookingFor} />
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">

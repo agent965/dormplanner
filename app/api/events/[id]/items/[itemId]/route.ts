@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { db, ensureEventRoleColumns, syncEventNecessaryTags } from "@/lib/db";
 import { bringItems, events } from "@/lib/db/schema";
 import { ensureActor, type Actor } from "@/lib/actor";
 import { setGuestName } from "@/lib/guest";
@@ -26,6 +26,7 @@ export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  await ensureEventRoleColumns();
   const { id: eventId, itemId } = await ctx.params;
   const body = await req.json();
   const parsed = patchSchema.safeParse(body);
@@ -62,12 +63,14 @@ export async function PATCH(
       .update(bringItems)
       .set({ approved: true, updatedAt: now })
       .where(eq(bringItems.id, itemId));
+    await syncEventNecessaryTags(eventId);
     return NextResponse.json({ ok: true });
   }
 
   if (parsed.data.action === "delete") {
     if (!isHost) return NextResponse.json({ error: "host only" }, { status: 403 });
     await db.delete(bringItems).where(eq(bringItems.id, itemId));
+    await syncEventNecessaryTags(eventId);
     return NextResponse.json({ ok: true });
   }
 
@@ -90,6 +93,7 @@ export async function PATCH(
         updatedAt: now,
       })
       .where(eq(bringItems.id, itemId));
+    await syncEventNecessaryTags(eventId);
     return NextResponse.json({ ok: true });
   }
 
@@ -106,6 +110,7 @@ export async function PATCH(
         updatedAt: now,
       })
       .where(eq(bringItems.id, itemId));
+    await syncEventNecessaryTags(eventId);
     return NextResponse.json({ ok: true });
   }
 
@@ -120,8 +125,10 @@ export async function PATCH(
         updatedAt: now,
       })
       .where(eq(bringItems.id, itemId));
+    await syncEventNecessaryTags(eventId);
     return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "unknown action" }, { status: 400 });
 }
+

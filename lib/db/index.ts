@@ -84,6 +84,36 @@ if (!globalForDb.schemaSynced) {
     .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "canceled" boolean DEFAULT false NOT NULL;`)
     .catch(() => {});
   pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "looking_for_dishwasher" boolean DEFAULT false NOT NULL;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "looking_for_cook" boolean DEFAULT false NOT NULL;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "looking_for_ingredients" boolean DEFAULT false NOT NULL;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "looking_for_cookware" boolean DEFAULT false NOT NULL;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_id" text;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_guest_id" text;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_name" text;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "cook_claimed_by_id" text;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "cook_claimed_by_guest_id" text;`)
+    .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "cook_claimed_by_name" text;`)
+    .catch(() => {});
+  pool
     .query(`ALTER TABLE IF EXISTS "bring_items" ADD COLUMN IF NOT EXISTS "approved" boolean DEFAULT false NOT NULL;`)
     .catch(() => {});
   pool
@@ -118,6 +148,84 @@ if (process.env.NODE_ENV !== "production") globalForDb.pgPool = pool;
 
 export const db = drizzle(pool, { schema });
 export { schema };
+
+let roleColumnsEnsured = false;
+export async function ensureEventRoleColumns() {
+  if (roleColumnsEnsured) return;
+  try {
+    await db.execute(sql`
+      ALTER TABLE IF EXISTS "events"
+        ADD COLUMN IF NOT EXISTS "looking_for_dishwasher" boolean DEFAULT false NOT NULL,
+        ADD COLUMN IF NOT EXISTS "looking_for_cook" boolean DEFAULT false NOT NULL,
+        ADD COLUMN IF NOT EXISTS "looking_for_ingredients" boolean DEFAULT false NOT NULL,
+        ADD COLUMN IF NOT EXISTS "looking_for_cookware" boolean DEFAULT false NOT NULL,
+        ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_id" text,
+        ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_guest_id" text,
+        ADD COLUMN IF NOT EXISTS "dishwasher_claimed_by_name" text,
+        ADD COLUMN IF NOT EXISTS "cook_claimed_by_id" text,
+        ADD COLUMN IF NOT EXISTS "cook_claimed_by_guest_id" text,
+        ADD COLUMN IF NOT EXISTS "cook_claimed_by_name" text;
+    `);
+    await db.execute(sql`
+      ALTER TABLE IF EXISTS "bring_items"
+        ADD COLUMN IF NOT EXISTS "category" text DEFAULT 'Other' NOT NULL,
+        ADD COLUMN IF NOT EXISTS "absolutely_necessary" boolean DEFAULT false NOT NULL;
+    `);
+    roleColumnsEnsured = true;
+  } catch {
+    // ignore if table does not exist yet
+  }
+}
+
+export async function syncEventNecessaryTags(eventId: string) {
+  await ensureEventRoleColumns();
+  const rows = await db
+    .select({
+      category: schema.bringItems.category,
+      absolutelyNecessary: schema.bringItems.absolutelyNecessary,
+      approved: schema.bringItems.approved,
+      claimedById: schema.bringItems.claimedById,
+      claimedByGuestId: schema.bringItems.claimedByGuestId,
+    })
+    .from(schema.bringItems)
+    .where(sql`${schema.bringItems.eventId} = ${eventId}`);
+
+  const necIngredients = rows.filter(
+    (r) => r.approved && r.absolutelyNecessary && r.category === "Ingredients"
+  );
+  const necCookware = rows.filter(
+    (r) => r.approved && r.absolutelyNecessary && r.category === "Cookware/Utensils"
+  );
+
+  const updates: {
+    lookingForIngredients?: boolean;
+    lookingForCookware?: boolean;
+  } = {};
+
+  if (necIngredients.length > 0) {
+    const allClaimed = necIngredients.every(
+      (r) => Boolean(r.claimedById || r.claimedByGuestId)
+    );
+    updates.lookingForIngredients = !allClaimed;
+  }
+
+  if (necCookware.length > 0) {
+    const allClaimed = necCookware.every(
+      (r) => Boolean(r.claimedById || r.claimedByGuestId)
+    );
+    updates.lookingForCookware = !allClaimed;
+  }
+
+  if (
+    updates.lookingForIngredients !== undefined ||
+    updates.lookingForCookware !== undefined
+  ) {
+    await db
+      .update(schema.events)
+      .set(updates)
+      .where(sql`${schema.events.id} = ${eventId}`);
+  }
+}
 
 export async function cleanupExpiredEvents() {
   // Throttle: at most once per 2 minutes per process. Prevents hammering

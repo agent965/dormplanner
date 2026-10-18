@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { desc, eq, sql } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { db, ensureEventRoleColumns, syncEventNecessaryTags } from "@/lib/db";
 import { bringItems, events } from "@/lib/db/schema";
 import { ensureActor, readActor } from "@/lib/actor";
 import { setGuestName } from "@/lib/guest";
@@ -23,24 +23,6 @@ const createSchema = z.object({
   guestName: z.string().trim().min(1).max(40).optional(),
 });
 
-let columnsEnsured = false;
-async function ensureBringColumns() {
-  if (columnsEnsured) return;
-  try {
-    await db.execute(sql`
-      ALTER TABLE IF EXISTS "bring_items"
-        ADD COLUMN IF NOT EXISTS "category" text DEFAULT 'Other' NOT NULL;
-    `);
-    await db.execute(sql`
-      ALTER TABLE IF EXISTS "bring_items"
-        ADD COLUMN IF NOT EXISTS "absolutely_necessary" boolean DEFAULT false NOT NULL;
-    `);
-    columnsEnsured = true;
-  } catch {
-    // ignore if table does not exist yet
-  }
-}
-
 async function getHostId(eventId: string): Promise<string | null> {
   const [e] = await db
     .select({ hostId: events.hostId })
@@ -52,7 +34,7 @@ async function getHostId(eventId: string): Promise<string | null> {
 
 // GET /api/events/:id/items: returns all items (approved and pending) for everyone, sorted with absolutelyNecessary first
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  await ensureBringColumns();
+  await ensureEventRoleColumns();
   const { id: eventId } = await ctx.params;
   const [actor, hostId] = await Promise.all([readActor(), getHostId(eventId)]);
   const isHost = actor?.kind === "user" && actor.userId === hostId;
@@ -83,7 +65,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 // POST /api/events/:id/items: anyone can suggest; host-added items are auto-approved
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  await ensureBringColumns();
+  await ensureEventRoleColumns();
   const { id: eventId } = await ctx.params;
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
@@ -105,19 +87,26 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const isHost = actor.kind === "user" && actor.userId === hostId;
 
   const id = newId();
+  const isNecessary = isHost ? Boolean(parsed.data.absolutelyNecessary) : false;
   await db.insert(bringItems).values({
     id,
     eventId,
     name: parsed.data.name,
     quantity: parsed.data.quantity,
     category: parsed.data.category,
-    absolutelyNecessary: isHost ? Boolean(parsed.data.absolutelyNecessary) : false,
+    absolutelyNecessary: isNecessary,
     note: parsed.data.note,
     createdByName: actor.displayName!,
     createdById: actor.kind === "user" ? actor.userId : null,
     createdByGuestId: actor.kind === "guest" ? actor.guestId : null,
     approved: isHost,
   });
+
+  if (isNecessary) {
+    await syncEventNecessaryTags(eventId);
+  }
+
   return NextResponse.json({ id, approved: isHost });
 }
+
 

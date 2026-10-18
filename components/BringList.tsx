@@ -129,7 +129,10 @@ export function BringList({
       setQty(1);
       setSelectedCategory(null);
       setAbsolutelyNecessary(false);
-      refresh();
+      await refresh();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("dormplanner:looking-for-sync"));
+      }
     } finally {
       setAdding(false);
     }
@@ -151,7 +154,10 @@ export function BringList({
         setError("Set your name above first.");
       }
     }
-    refresh();
+    await refresh();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("dormplanner:looking-for-sync"));
+    }
   }
 
   // Sort items with "Absolutely Necessary" to the top of the list

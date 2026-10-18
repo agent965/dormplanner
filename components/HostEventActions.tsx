@@ -6,6 +6,10 @@ import { UW_DORMS } from "@/lib/dorms";
 import { cn, DIETARY_TAGS, type DietaryTagValue } from "@/lib/utils";
 import type { PlannedDish } from "@/lib/db/schema";
 import { PlannedDishesEditor, PlannedDishesList } from "@/components/PlannedDishes";
+import {
+  LookingForEditor,
+  type LookingForState,
+} from "@/components/LookingForSection";
 
 type EventData = {
   id: string;
@@ -18,6 +22,10 @@ type EventData = {
   capacity: number | null;
   tags: DietaryTagValue[];
   plannedDishes?: PlannedDish[];
+  lookingForDishwasher?: boolean;
+  lookingForCook?: boolean;
+  lookingForIngredients?: boolean;
+  lookingForCookware?: boolean;
   openToAllDorms: boolean;
   yesCount: number;
 };
@@ -46,6 +54,12 @@ export function HostEventActions({ event }: { event: EventData }) {
   const [plannedDishes, setPlannedDishes] = useState<PlannedDish[]>(
     event.plannedDishes ?? []
   );
+  const [lookingFor, setLookingFor] = useState<LookingForState>({
+    lookingForDishwasher: Boolean(event.lookingForDishwasher),
+    lookingForCook: Boolean(event.lookingForCook),
+    lookingForIngredients: Boolean(event.lookingForIngredients),
+    lookingForCookware: Boolean(event.lookingForCookware),
+  });
   const [openToAll, setOpenToAll] = useState(event.openToAllDorms);
 
   const [submitting, setSubmitting] = useState(false);
@@ -56,7 +70,7 @@ export function HostEventActions({ event }: { event: EventData }) {
   const toggleTag = (t: DietaryTagValue) =>
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
-  function openEdit() {
+  async function openEdit() {
     setTitle(event.title);
     setDescription(event.description ?? "");
     setDormSlug(event.dormSlug ?? "");
@@ -66,10 +80,30 @@ export function HostEventActions({ event }: { event: EventData }) {
     setCapacity(event.capacity != null ? String(event.capacity) : "");
     setTags(event.tags ?? []);
     setPlannedDishes(event.plannedDishes ?? []);
+    setLookingFor({
+      lookingForDishwasher: Boolean(event.lookingForDishwasher),
+      lookingForCook: Boolean(event.lookingForCook),
+      lookingForIngredients: Boolean(event.lookingForIngredients),
+      lookingForCookware: Boolean(event.lookingForCookware),
+    });
     setOpenToAll(event.openToAllDorms);
     setCapacityError(null);
     setError(null);
     setEditing(true);
+    try {
+      const r = await fetch(`/api/events/${event.id}/roles`, { cache: "no-store" });
+      if (r.ok) {
+        const data = await r.json();
+        setLookingFor({
+          lookingForDishwasher: Boolean(data.lookingForDishwasher),
+          lookingForCook: Boolean(data.lookingForCook),
+          lookingForIngredients: Boolean(data.lookingForIngredients),
+          lookingForCookware: Boolean(data.lookingForCookware),
+        });
+      }
+    } catch {
+      // ignore
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -259,6 +293,8 @@ export function HostEventActions({ event }: { event: EventData }) {
               ))}
             </div>
           </div>
+
+          <LookingForEditor state={lookingFor} readOnly />
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
