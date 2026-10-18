@@ -29,7 +29,7 @@ export default async function Home() {
           <h1 className="display text-3xl sm:text-4xl font-bold tracking-tight">
             Welcome to DormPlanner!
           </h1>
-          <p className="text-sm sm:text-base text-[color:var(--muted)] text-right">
+          <p className="text-sm sm:text-base text-[color:var(--muted)] text-left">
             Plan, Join, and Delegate Responsibility to escape the Dining Hall, together!
           </p>
         </div>
