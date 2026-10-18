@@ -32,6 +32,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
   const [dormSlug, setDormSlug] = useState(defaultDormSlug);
   const [location, setLocation] = useState("");
   const [startsAt, setStartsAt] = useState(toLocalInput(roundToNextHour(new Date())));
+  const [endsAt, setEndsAt] = useState("");
   const [capacity, setCapacity] = useState("");
   const [tags, setTags] = useState<DietaryTagValue[]>([]);
   const [openToAll, setOpenToAll] = useState(false);
@@ -43,15 +44,30 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
 
   // Quiet-hours warning if end time (default +2h) crosses 10pm on a weeknight
   const start = new Date(startsAt);
-  const endGuess = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const endGuess = endsAt
+    ? new Date(endsAt)
+    : new Date(start.getTime() + 2 * 60 * 60 * 1000);
   const weeknight = start.getDay() >= 0 && start.getDay() <= 4; // Sun–Thu
   const quietWarning =
-    !isNaN(start.getTime()) && weeknight && endGuess.getHours() >= 22;
+    !isNaN(start.getTime()) &&
+    !isNaN(endGuess.getTime()) &&
+    weeknight &&
+    endGuess.getHours() >= 22;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError(null);
+
+    const startDate = new Date(startsAt);
+    if (endsAt) {
+      const endDate = new Date(endsAt);
+      if (isNaN(endDate.getTime()) || endDate <= startDate) {
+        setError("End date/time must be after the start date/time.");
+        return;
+      }
+    }
+
+    setSubmitting(true);
     try {
       const r = await fetch("/api/events", {
         method: "POST",
@@ -61,7 +77,8 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           description: description || undefined,
           dormSlug: dormSlug || undefined,
           location: location || undefined,
-          startsAt: new Date(startsAt).toISOString(),
+          startsAt: startDate.toISOString(),
+          endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
           capacity: capacity ? parseInt(capacity) : undefined,
           tags,
           openToAllDorms: openToAll,
@@ -184,18 +201,28 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
           />
         </label>
         <label className="block">
-          <span className="text-xs text-[color:var(--muted)]">Capacity</span>
+          <span className="text-xs text-[color:var(--muted)]">End (defaults to +2 hrs)</span>
           <input
-            type="number"
-            min={1}
-            max={1000}
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-            placeholder="e.g. 20"
+            type="datetime-local"
+            value={endsAt}
+            onChange={(e) => setEndsAt(e.target.value)}
             className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
           />
         </label>
       </div>
+
+      <label className="block">
+        <span className="text-xs text-[color:var(--muted)]">Capacity</span>
+        <input
+          type="number"
+          min={1}
+          max={1000}
+          value={capacity}
+          onChange={(e) => setCapacity(e.target.value)}
+          placeholder="e.g. 20"
+          className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
+        />
+      </label>
 
       <label className="flex items-center gap-2 text-sm">
         <input

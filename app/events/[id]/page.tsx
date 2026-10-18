@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { cleanupExpiredEvents, db } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { BringList } from "@/components/BringList";
 import { RsvpControl } from "@/components/RsvpControl";
@@ -17,6 +17,8 @@ export default async function EventDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await cleanupExpiredEvents();
+
   const { id } = await params;
 
   const [row] = await db
@@ -31,6 +33,7 @@ export default async function EventDetail({
       capacity: events.capacity,
       tags: events.tags,
       openToAllDorms: events.openToAllDorms,
+      canceled: events.canceled,
       hostId: events.hostId,
       hostName: users.username,
     })
@@ -40,6 +43,7 @@ export default async function EventDetail({
     .limit(1);
 
   if (!row) notFound();
+  if (row.canceled) redirect("/");
 
   const yesCountRow = await db
     .select({ c: sql<number>`count(*)::int` })
@@ -83,7 +87,9 @@ export default async function EventDetail({
     <article className="space-y-6">
       <header className="space-y-2">
         <div className="text-xs text-[color:var(--muted)]">
-          {formatEventTime(new Date(row.startsAt))} · {dormName(row.dormSlug)}
+          {formatEventTime(new Date(row.startsAt))}
+          {row.endsAt ? ` – ${formatEventTime(new Date(row.endsAt))}` : ""} ·{" "}
+          {dormName(row.dormSlug)}
           {row.location ? ` · ${row.location}` : ""}
         </div>
         <h1 className="text-2xl font-semibold">{row.title}</h1>
@@ -112,6 +118,7 @@ export default async function EventDetail({
               dormSlug: row.dormSlug,
               location: row.location,
               startsAt: new Date(row.startsAt).toISOString(),
+              endsAt: row.endsAt ? new Date(row.endsAt).toISOString() : null,
               capacity: row.capacity,
               tags: row.tags ?? [],
               openToAllDorms: row.openToAllDorms,

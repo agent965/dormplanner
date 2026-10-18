@@ -58,6 +58,7 @@ export const events = pgTable(
     capacity: integer("capacity"),
     tags: dietaryTag("tags").array().notNull().default([]),
     openToAllDorms: boolean("open_to_all_dorms").notNull().default(false),
+    canceled: boolean("canceled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

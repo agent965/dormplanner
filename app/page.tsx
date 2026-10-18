@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { and, eq, gte, or, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { cleanupExpiredEvents, db } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { EventCard } from "@/components/EventCard";
 import { DormPicker } from "@/components/DormPicker";
@@ -10,6 +10,8 @@ import { dormName } from "@/lib/dorms";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  await cleanupExpiredEvents();
+
   const session = await auth();
   const me = session?.user?.id
     ? (
@@ -20,14 +22,14 @@ export default async function Home() {
       )[0] ?? null
     : null;
 
-  const now = new Date();
+  const notEnded = sql`COALESCE(${events.endsAt}, ${events.startsAt} + interval '2 hours') > now()`;
   // Signed-in with a dorm: show that dorm + open-to-all. Otherwise show everything.
   const whereClause = me?.dormSlug
     ? and(
-        gte(events.startsAt, now),
+        notEnded,
         or(eq(events.dormSlug, me.dormSlug), eq(events.openToAllDorms, true))
       )
-    : gte(events.startsAt, now);
+    : notEnded;
 
   const rows = await db
     .select({
@@ -35,10 +37,12 @@ export default async function Home() {
       title: events.title,
       description: events.description,
       startsAt: events.startsAt,
+      endsAt: events.endsAt,
       location: events.location,
       dormSlug: events.dormSlug,
       capacity: events.capacity,
       tags: events.tags,
+      canceled: events.canceled,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
         select count(*)::int from ${rsvps}
@@ -48,7 +52,7 @@ export default async function Home() {
     .from(events)
     .leftJoin(users, eq(events.hostId, users.id))
     .where(whereClause)
-    .orderBy(events.startsAt)
+    .orderBy(events.canceled, events.startsAt)
     .limit(50);
 
   return (
@@ -125,12 +129,14 @@ export default async function Home() {
                   title={e.title}
                   description={e.description}
                   startsAt={new Date(e.startsAt)}
+                  endsAt={e.endsAt ? new Date(e.endsAt) : null}
                   location={e.location}
                   dormSlug={e.dormSlug}
                   hostName={e.hostName}
                   rsvpYesCount={e.rsvpYesCount}
                   capacity={e.capacity}
                   tags={e.tags}
+                  canceled={e.canceled}
                 />
               </li>
             ))}

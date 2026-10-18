@@ -12,6 +12,7 @@ type EventData = {
   dormSlug: string | null;
   location: string | null;
   startsAt: string;
+  endsAt?: string | null;
   capacity: number | null;
   tags: DietaryTagValue[];
   openToAllDorms: boolean;
@@ -32,6 +33,9 @@ export function HostEventActions({ event }: { event: EventData }) {
   const [dormSlug, setDormSlug] = useState(event.dormSlug ?? "");
   const [location, setLocation] = useState(event.location ?? "");
   const [startsAt, setStartsAt] = useState(toLocalInput(event.startsAt));
+  const [endsAt, setEndsAt] = useState(
+    event.endsAt ? toLocalInput(event.endsAt) : ""
+  );
   const [capacity, setCapacity] = useState(
     event.capacity != null ? String(event.capacity) : ""
   );
@@ -52,6 +56,7 @@ export function HostEventActions({ event }: { event: EventData }) {
     setDormSlug(event.dormSlug ?? "");
     setLocation(event.location ?? "");
     setStartsAt(toLocalInput(event.startsAt));
+    setEndsAt(event.endsAt ? toLocalInput(event.endsAt) : "");
     setCapacity(event.capacity != null ? String(event.capacity) : "");
     setTags(event.tags ?? []);
     setOpenToAll(event.openToAllDorms);
@@ -64,6 +69,15 @@ export function HostEventActions({ event }: { event: EventData }) {
     e.preventDefault();
     setCapacityError(null);
     setError(null);
+
+    const startDate = new Date(startsAt);
+    if (endsAt) {
+      const endDate = new Date(endsAt);
+      if (isNaN(endDate.getTime()) || endDate <= startDate) {
+        setError("End date/time must be after the start date/time. Changes were not saved.");
+        return;
+      }
+    }
 
     const parsedCap = capacity.trim() === "" ? null : parseInt(capacity, 10);
     if (parsedCap != null && (isNaN(parsedCap) || parsedCap < 1)) {
@@ -88,7 +102,8 @@ export function HostEventActions({ event }: { event: EventData }) {
           description: description || null,
           dormSlug: dormSlug || null,
           location: location || null,
-          startsAt: new Date(startsAt).toISOString(),
+          startsAt: startDate.toISOString(),
+          endsAt: endsAt ? new Date(endsAt).toISOString() : null,
           capacity: parsedCap,
           tags,
           openToAllDorms: openToAll,
@@ -264,31 +279,41 @@ export function HostEventActions({ event }: { event: EventData }) {
               />
             </label>
             <label className="block">
-              <span className="text-xs text-[color:var(--muted)]">Capacity</span>
+              <span className="text-xs text-[color:var(--muted)]">End (defaults to +2 hrs)</span>
               <input
-                type="number"
-                min={1}
-                max={1000}
-                value={capacity}
-                onChange={(e) => {
-                  setCapacity(e.target.value);
-                  if (capacityError) setCapacityError(null);
-                }}
-                placeholder="e.g. 20"
-                className={cn(
-                  "mt-1 w-full bg-transparent border rounded-md px-3 py-2 text-sm",
-                  capacityError
-                    ? "border-[color:var(--danger)]"
-                    : "border-[color:var(--border)]"
-                )}
+                type="datetime-local"
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
+                className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm"
               />
-              {capacityError ? (
-                <p className="mt-1 text-xs text-[color:var(--danger)]">
-                  {capacityError}
-                </p>
-              ) : null}
             </label>
           </div>
+
+          <label className="block">
+            <span className="text-xs text-[color:var(--muted)]">Capacity</span>
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={capacity}
+              onChange={(e) => {
+                setCapacity(e.target.value);
+                if (capacityError) setCapacityError(null);
+              }}
+              placeholder="e.g. 20"
+              className={cn(
+                "mt-1 w-full bg-transparent border rounded-md px-3 py-2 text-sm",
+                capacityError
+                  ? "border-[color:var(--danger)]"
+                  : "border-[color:var(--border)]"
+              )}
+            />
+            {capacityError ? (
+              <p className="mt-1 text-xs text-[color:var(--danger)]">
+                {capacityError}
+              </p>
+            ) : null}
+          </label>
 
           <label className="flex items-center gap-2 text-sm">
             <input

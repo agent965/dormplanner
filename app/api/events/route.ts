@@ -27,6 +27,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const v = parsed.data;
+  const startsAtDate = new Date(v.startsAt);
+  const endsAtDate = v.endsAt
+    ? new Date(v.endsAt)
+    : new Date(startsAtDate.getTime() + 2 * 60 * 60 * 1000);
+
+  if (isNaN(startsAtDate.getTime()) || isNaN(endsAtDate.getTime()) || endsAtDate <= startsAtDate) {
+    return NextResponse.json({ error: "invalid_dates" }, { status: 400 });
+  }
+
   const id = newId();
   await db.insert(events).values({
     id,
@@ -35,8 +44,8 @@ export async function POST(req: Request) {
     hostId: session.user.id,
     dormSlug: v.dormSlug || null,
     location: v.location ?? null,
-    startsAt: new Date(v.startsAt),
-    endsAt: v.endsAt ? new Date(v.endsAt) : null,
+    startsAt: startsAtDate,
+    endsAt: endsAtDate,
     capacity: v.capacity ?? null,
     tags: v.tags,
     openToAllDorms: v.openToAllDorms ?? false,

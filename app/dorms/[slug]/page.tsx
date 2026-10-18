@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { and, eq, gte, sql } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { and, eq, sql } from "drizzle-orm";
+import { cleanupExpiredEvents, db } from "@/lib/db";
 import { events, dorms, rsvps, users } from "@/lib/db/schema";
 import { EventCard } from "@/components/EventCard";
 
@@ -11,21 +11,25 @@ export default async function DormFeed({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await cleanupExpiredEvents();
+
   const { slug } = await params;
   const [dorm] = await db.select().from(dorms).where(eq(dorms.slug, slug));
   if (!dorm) notFound();
 
-  const now = new Date();
+  const notEnded = sql`COALESCE(${events.endsAt}, ${events.startsAt} + interval '2 hours') > now()`;
   const rows = await db
     .select({
       id: events.id,
       title: events.title,
       description: events.description,
       startsAt: events.startsAt,
+      endsAt: events.endsAt,
       location: events.location,
       dormSlug: events.dormSlug,
       capacity: events.capacity,
       tags: events.tags,
+      canceled: events.canceled,
       hostName: users.username,
       rsvpYesCount: sql<number>`(
         select count(*)::int from ${rsvps}
@@ -34,8 +38,8 @@ export default async function DormFeed({
     })
     .from(events)
     .leftJoin(users, eq(events.hostId, users.id))
-    .where(and(gte(events.startsAt, now), eq(events.dormSlug, slug)))
-    .orderBy(events.startsAt);
+    .where(and(notEnded, eq(events.dormSlug, slug)))
+    .orderBy(events.canceled, events.startsAt);
 
   return (
     <div className="space-y-4">
@@ -54,12 +58,14 @@ export default async function DormFeed({
                 title={e.title}
                 description={e.description}
                 startsAt={new Date(e.startsAt)}
+                endsAt={e.endsAt ? new Date(e.endsAt) : null}
                 location={e.location}
                 dormSlug={e.dormSlug}
                 hostName={e.hostName}
                 rsvpYesCount={e.rsvpYesCount}
                 capacity={e.capacity}
                 tags={e.tags}
+                canceled={e.canceled}
               />
             </li>
           ))}

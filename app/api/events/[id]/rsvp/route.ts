@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { rsvps } from "@/lib/db/schema";
+import { events, rsvps } from "@/lib/db/schema";
 import { ensureActor } from "@/lib/actor";
 import { setGuestName } from "@/lib/guest";
 import { newId } from "@/lib/utils";
@@ -16,6 +16,15 @@ const bodySchema = z.object({
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id: eventId } = await ctx.params;
+  const [ev] = await db
+    .select({ canceled: events.canceled })
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
+  if (!ev || ev.canceled) {
+    return NextResponse.json({ error: "event_canceled" }, { status: 400 });
+  }
+
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {

@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 import * as schema from "./schema";
 
@@ -25,6 +26,9 @@ if (!globalForDb.schemaSynced) {
     .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "tags" "dietary_tag"[] DEFAULT '{}' NOT NULL;`)
     .catch(() => {});
   pool
+    .query(`ALTER TABLE IF EXISTS "events" ADD COLUMN IF NOT EXISTS "canceled" boolean DEFAULT false NOT NULL;`)
+    .catch(() => {});
+  pool
     .query(`ALTER TABLE IF EXISTS "bring_items" ADD COLUMN IF NOT EXISTS "approved" boolean DEFAULT false NOT NULL;`)
     .catch(() => {});
 }
@@ -33,3 +37,12 @@ if (process.env.NODE_ENV !== "production") globalForDb.pgPool = pool;
 
 export const db = drizzle(pool, { schema });
 export { schema };
+
+export async function cleanupExpiredEvents() {
+  await db
+    .delete(schema.events)
+    .where(
+      sql`COALESCE(${schema.events.endsAt}, ${schema.events.startsAt} + interval '2 hours') <= now()`
+    );
+}
+

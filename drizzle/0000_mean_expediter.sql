@@ -34,6 +34,7 @@ CREATE TABLE "events" (
 	"capacity" integer,
 	"tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
 	"open_to_all_dorms" boolean DEFAULT false NOT NULL,
+	"canceled" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

@@ -48,6 +48,14 @@ export async function PATCH(
   }
 
   const v = parsed.data;
+  const startsAtDate = new Date(v.startsAt);
+  const endsAtDate = v.endsAt
+    ? new Date(v.endsAt)
+    : new Date(startsAtDate.getTime() + 2 * 60 * 60 * 1000);
+
+  if (isNaN(startsAtDate.getTime()) || isNaN(endsAtDate.getTime()) || endsAtDate <= startsAtDate) {
+    return NextResponse.json({ error: "invalid_dates" }, { status: 400 });
+  }
 
   if (v.capacity != null) {
     const yesCountRow = await db
@@ -75,8 +83,8 @@ export async function PATCH(
       description: v.description || null,
       dormSlug: v.dormSlug || null,
       location: v.location || null,
-      startsAt: new Date(v.startsAt),
-      endsAt: v.endsAt ? new Date(v.endsAt) : null,
+      startsAt: startsAtDate,
+      endsAt: endsAtDate,
       capacity: v.capacity ?? null,
       tags: v.tags,
       openToAllDorms: v.openToAllDorms ?? false,
@@ -109,7 +117,12 @@ export async function DELETE(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  await db.delete(events).where(eq(events.id, id));
+  // Kick out all people who joined and mark event as canceled
+  await db.delete(rsvps).where(eq(rsvps.eventId, id));
+  await db
+    .update(events)
+    .set({ canceled: true })
+    .where(eq(events.id, id));
 
   return NextResponse.json({ ok: true });
 }
