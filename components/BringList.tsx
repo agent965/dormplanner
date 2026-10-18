@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -161,11 +162,39 @@ export function BringList({
                     ) : null}
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--muted)]">
-                    {claimed
-                      ? myClaim
-                        ? "You've got this"
-                        : `${item.claimedByName} has this`
-                      : `Added by ${item.createdByName}`}
+                    {claimed ? (
+                      myClaim ? (
+                        "You've got this"
+                      ) : (
+                        <>
+                          {item.claimedById && item.claimedByName ? (
+                            <Link
+                              href={`/users/${encodeURIComponent(item.claimedByName)}`}
+                              className="underline hover:text-[color:var(--husky-purple)]"
+                            >
+                              {item.claimedByName}
+                            </Link>
+                          ) : (
+                            item.claimedByName
+                          )}{" "}
+                          has this
+                        </>
+                      )
+                    ) : (
+                      <>
+                        Added by{" "}
+                        {item.createdById ? (
+                          <Link
+                            href={`/users/${encodeURIComponent(item.createdByName)}`}
+                            className="underline hover:text-[color:var(--husky-purple)]"
+                          >
+                            {item.createdByName}
+                          </Link>
+                        ) : (
+                          item.createdByName
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -225,7 +254,17 @@ export function BringList({
                     ) : null}
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--muted)]">
-                    Suggested by {item.createdByName}
+                    Suggested by{" "}
+                    {item.createdById ? (
+                      <Link
+                        href={`/users/${encodeURIComponent(item.createdByName)}`}
+                        className="underline hover:text-[color:var(--husky-purple)]"
+                      >
+                        {item.createdByName}
+                      </Link>
+                    ) : (
+                      item.createdByName
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -38,6 +38,25 @@ CREATE TABLE "events" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "past_events" (
+	"id" text PRIMARY KEY NOT NULL,
+	"title" text NOT NULL,
+	"description" text,
+	"host_id" text,
+	"host_name" text NOT NULL,
+	"dorm_slug" text,
+	"location" text,
+	"starts_at" timestamp with time zone NOT NULL,
+	"ends_at" timestamp with time zone NOT NULL,
+	"capacity" integer,
+	"tags" "dietary_tag"[] DEFAULT '{}' NOT NULL,
+	"open_to_all_dorms" boolean DEFAULT false NOT NULL,
+	"rsvp_yes_count" integer DEFAULT 0 NOT NULL,
+	"attendee_usernames" text[] DEFAULT '{}' NOT NULL,
+	"attendee_names" text[] DEFAULT '{}' NOT NULL,
+	"archived_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "leftovers" (
 	"id" text PRIMARY KEY NOT NULL,
 	"event_id" text,

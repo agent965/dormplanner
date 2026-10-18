@@ -8,6 +8,7 @@ async function main() {
       bring_items,
       rsvps,
       leftovers,
+      past_events,
       events,
       dorms,
       accounts,

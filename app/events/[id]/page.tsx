@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { cleanupExpiredEvents, db } from "@/lib/db";
@@ -94,7 +95,17 @@ export default async function EventDetail({
         </div>
         <h1 className="text-2xl font-semibold">{row.title}</h1>
         <div className="text-sm text-[color:var(--muted)]">
-          Hosted by {row.hostName ?? "someone"}
+          Hosted by{" "}
+          {row.hostName ? (
+            <Link
+              href={`/users/${encodeURIComponent(row.hostName)}`}
+              className="underline hover:text-[color:var(--husky-purple)]"
+            >
+              {row.hostName}
+            </Link>
+          ) : (
+            "someone"
+          )}
           {row.openToAllDorms ? " · open to all dorms" : ""}
         </div>
         {row.tags && row.tags.length > 0 ? (
@@ -151,7 +162,19 @@ export default async function EventDetail({
             {guestList
               .filter((g) => g.status === "yes")
               .map((g, i) => (
-                <li key={i}>· {g.name ?? g.guestName ?? "someone"}</li>
+                <li key={i}>
+                  ·{" "}
+                  {g.name ? (
+                    <Link
+                      href={`/users/${encodeURIComponent(g.name)}`}
+                      className="underline hover:text-[color:var(--husky-purple)]"
+                    >
+                      {g.name}
+                    </Link>
+                  ) : (
+                    g.guestName ?? "someone"
+                  )}
+                </li>
               ))}
           </ul>
         ) : null}

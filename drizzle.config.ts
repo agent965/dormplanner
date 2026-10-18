@@ -22,6 +22,7 @@ export default defineConfig({
     "verification_tokens",
     "dorms",
     "events",
+    "past_events",
     "rsvps",
     "bring_items",
     "leftovers",
