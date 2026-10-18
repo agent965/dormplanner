@@ -6,6 +6,9 @@ import { events, pastEvents, rsvps, users } from "@/lib/db/schema";
 import { PastEventCard } from "@/components/PastEventCard";
 import { EventCard } from "@/components/EventCard";
 import { Avatar } from "@/components/Avatar";
+import { EditProfileButton } from "@/components/EditProfileButton";
+import { ProfileStatsBar } from "@/components/ProfileStatsBar";
+import { getFriendshipRelation, getProfileStats } from "@/lib/friends";
 import { dormName } from "@/lib/dorms";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +43,18 @@ export default async function UserProfilePage({
     .limit(1);
 
   const session = await auth();
-  const isMe = session?.user?.id && userRow?.id === session.user.id;
+  const isMe = Boolean(session?.user?.id && userRow?.id === session.user.id);
 
   const displayUsername = userRow?.username ?? decodeURIComponent(rawUsername);
   const displayName = userRow?.displayName || displayUsername;
+
+  const stats = userRow
+    ? await getProfileStats(userRow.id, userRow.username)
+    : { friendsCount: 0, incomingRequestsCount: 0, eventsAttendedCount: 0 };
+
+  const relation = userRow
+    ? await getFriendshipRelation(session?.user?.id, userRow.id)
+    : { state: "none" as const, friendshipId: null };
 
   // Upcoming events this user is hosting
   const now = new Date();
@@ -59,6 +70,7 @@ export default async function UserProfilePage({
           dormSlug: events.dormSlug,
           capacity: events.capacity,
           tags: events.tags,
+          plannedDishes: events.plannedDishes,
           canceled: events.canceled,
           rsvpYesCount: sql<number>`(
             select count(*)::int from ${rsvps}
@@ -100,6 +112,12 @@ export default async function UserProfilePage({
 
   return (
     <div className="space-y-6">
+      {isMe ? (
+        <div className="flex justify-end">
+          <EditProfileButton />
+        </div>
+      ) : null}
+
       {/* Profile card */}
       <section className="card p-5">
         <div className="flex items-start gap-4 flex-wrap">
@@ -137,7 +155,7 @@ export default async function UserProfilePage({
             ) : (
               <p className="mt-3 text-sm text-[color:var(--muted)] italic">
                 {isMe
-                  ? "No bio yet, "
+                  ? "No bio yet — "
                   : `${displayName} hasn't written a bio yet.`}
                 {isMe ? (
                   <Link href="/profile" className="underline">
@@ -149,6 +167,18 @@ export default async function UserProfilePage({
           </div>
         </div>
       </section>
+
+      {/* Bar beneath the profile bar (Friends count, Events attended count, and Add friend / Unfriend button) */}
+      <ProfileStatsBar
+        username={displayUsername}
+        targetUserId={userRow?.id ?? null}
+        initialFriendsCount={stats.friendsCount}
+        incomingRequestsCount={stats.incomingRequestsCount}
+        eventsAttendedCount={stats.eventsAttendedCount}
+        isMe={isMe}
+        isSignedIn={Boolean(session?.user?.id)}
+        initialRelation={relation.state}
+      />
 
       {/* Upcoming hosted events */}
       {upcoming.length > 0 ? (
@@ -170,6 +200,7 @@ export default async function UserProfilePage({
                   rsvpYesCount={e.rsvpYesCount}
                   capacity={e.capacity}
                   tags={e.tags}
+                  plannedDishes={e.plannedDishes}
                   canceled={e.canceled}
                 />
               </li>
@@ -179,7 +210,7 @@ export default async function UserProfilePage({
       ) : null}
 
       {/* Past events (hosted + attended) */}
-      <section className="space-y-2">
+      <section id="profile-history" className="space-y-2 scroll-mt-4">
         <h2 className="text-sm font-medium text-[color:var(--muted)] uppercase tracking-wide">
           History ({userPast.length})
         </h2>

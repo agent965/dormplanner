@@ -191,6 +191,30 @@ export const leftovers = pgTable(
   (t) => [index("leftovers_dorm_idx").on(t.dormSlug)]
 );
 
+// Friendships & friend requests
+export const friendships = pgTable(
+  "friendships",
+  {
+    id: text("id").primaryKey(),
+    requesterId: text("requester_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addresseeId: text("addressee_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"), // "pending" | "accepted"
+    starredByRequester: boolean("starred_by_requester").notNull().default(false),
+    starredByAddressee: boolean("starred_by_addressee").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("friendships_pair_uidx").on(t.requesterId, t.addresseeId),
+    index("friendships_requester_idx").on(t.requesterId),
+    index("friendships_addressee_idx").on(t.addresseeId),
+  ]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   hostedEvents: many(events),

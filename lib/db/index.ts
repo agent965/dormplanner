@@ -56,6 +56,22 @@ ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "maybe_names" text[
 ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "planned_dishes" jsonb DEFAULT '[]'::jsonb NOT NULL;
 `;
 
+const ensureFriendshipsSql = `
+CREATE TABLE IF NOT EXISTS "friendships" (
+  "id" text PRIMARY KEY NOT NULL,
+  "requester_id" text NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "addressee_id" text NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+  "status" text DEFAULT 'pending' NOT NULL,
+  "starred_by_requester" boolean DEFAULT false NOT NULL,
+  "starred_by_addressee" boolean DEFAULT false NOT NULL,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "friendships_pair_uidx" ON "friendships" ("requester_id", "addressee_id");
+CREATE INDEX IF NOT EXISTS "friendships_requester_idx" ON "friendships" ("requester_id");
+CREATE INDEX IF NOT EXISTS "friendships_addressee_idx" ON "friendships" ("addressee_id");
+`;
+
 if (!globalForDb.schemaSynced) {
   globalForDb.schemaSynced = true;
   pool
@@ -89,6 +105,7 @@ if (!globalForDb.schemaSynced) {
     )
     .catch(() => {});
   pool.query(ensurePastEventsSql).catch(() => {});
+  pool.query(ensureFriendshipsSql).catch(() => {});
 }
 
 if (process.env.NODE_ENV !== "production") globalForDb.pgPool = pool;
