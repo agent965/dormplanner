@@ -39,7 +39,9 @@ export default async function UserHistoryPage({
     (e) =>
       e.hostName.toLowerCase() === targetUsername ||
       e.attendeeUsernames.some((u) => u.toLowerCase() === targetUsername) ||
-      e.attendeeNames.some((n) => n.toLowerCase() === targetUsername)
+      e.attendeeNames.some((n) => n.toLowerCase() === targetUsername) ||
+      (e.maybeUsernames ?? []).some((u) => u.toLowerCase() === targetUsername) ||
+      (e.maybeNames ?? []).some((n) => n.toLowerCase() === targetUsername)
   );
 
   return (

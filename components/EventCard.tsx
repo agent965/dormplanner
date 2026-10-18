@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   cn,
   dietaryTagLabel,
@@ -8,6 +9,11 @@ import {
   getInProgressRemaining,
 } from "@/lib/utils";
 import { dormName } from "@/lib/dorms";
+
+export type RsvpPerson = {
+  name: string;
+  username: string | null;
+};
 
 export type EventCardProps = {
   id: string;
@@ -25,9 +31,13 @@ export type EventCardProps = {
   pinned?: boolean;
   onTogglePin?: (id: string) => void;
   nowMs?: number;
+  goingList?: RsvpPerson[];
+  maybeList?: RsvpPerson[];
+  cantGoList?: RsvpPerson[];
 };
 
 export function EventCard(e: EventCardProps) {
+  const router = useRouter();
   const startsAtDate =
     typeof e.startsAt === "string" ? new Date(e.startsAt) : e.startsAt;
   const endsAtDate =
@@ -41,6 +51,57 @@ export function EventCard(e: EventCardProps) {
   const inProgressLeft = !e.canceled
     ? getInProgressRemaining(startsAtDate, endsAtDate, e.nowMs)
     : null;
+
+  const going = e.goingList ?? [];
+  const maybe = e.maybeList ?? [];
+  const cantGo = e.cantGoList ?? [];
+  const hasRsvpBubbles =
+    going.length > 0 || maybe.length > 0 || cantGo.length > 0;
+
+  function renderPersonBubble(
+    person: RsvpPerson,
+    key: string,
+    bubbleClass: string
+  ) {
+    if (person.username && !e.canceled) {
+      return (
+        <span
+          key={key}
+          role="link"
+          tabIndex={0}
+          onClick={(ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            router.push(`/users/${encodeURIComponent(person.username!)}`);
+          }}
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter" || ev.key === " ") {
+              ev.preventDefault();
+              ev.stopPropagation();
+              router.push(`/users/${encodeURIComponent(person.username!)}`);
+            }
+          }}
+          className={cn(
+            "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium hover:underline cursor-pointer",
+            bubbleClass
+          )}
+        >
+          {person.name}
+        </span>
+      );
+    }
+    return (
+      <span
+        key={key}
+        className={cn(
+          "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium",
+          bubbleClass
+        )}
+      >
+        {person.name}
+      </span>
+    );
+  }
 
   const content = (
     <div className="flex items-start justify-between gap-3">
@@ -71,6 +132,31 @@ export function EventCard(e: EventCardProps) {
             </span>
           ) : null}
         </div>
+        {hasRsvpBubbles ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {going.map((p, i) =>
+              renderPersonBubble(
+                p,
+                `yes-${p.name}-${i}`,
+                "bg-[#007FFF] text-white border border-[#007FFF]"
+              )
+            )}
+            {maybe.map((p, i) =>
+              renderPersonBubble(
+                p,
+                `maybe-${p.name}-${i}`,
+                "bg-[#F9E076] text-[#1a1a1a] border border-[#e5c858]"
+              )
+            )}
+            {cantGo.map((p, i) =>
+              renderPersonBubble(
+                p,
+                `no-${p.name}-${i}`,
+                "bg-white text-[#dc2626] border border-[#dc2626]"
+              )
+            )}
+          </div>
+        ) : null}
         {e.tags && e.tags.length > 0 ? (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {e.tags.map((t) => (

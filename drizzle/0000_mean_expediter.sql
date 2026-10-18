@@ -54,6 +54,8 @@ CREATE TABLE "past_events" (
 	"rsvp_yes_count" integer DEFAULT 0 NOT NULL,
 	"attendee_usernames" text[] DEFAULT '{}' NOT NULL,
 	"attendee_names" text[] DEFAULT '{}' NOT NULL,
+	"maybe_usernames" text[] DEFAULT '{}' NOT NULL,
+	"maybe_names" text[] DEFAULT '{}' NOT NULL,
 	"archived_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

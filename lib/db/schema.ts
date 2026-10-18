@@ -86,6 +86,8 @@ export const pastEvents = pgTable(
     rsvpYesCount: integer("rsvp_yes_count").notNull().default(0),
     attendeeUsernames: text("attendee_usernames").array().notNull().default([]),
     attendeeNames: text("attendee_names").array().notNull().default([]),
+    maybeUsernames: text("maybe_usernames").array().notNull().default([]),
+    maybeNames: text("maybe_names").array().notNull().default([]),
     archivedAt: timestamp("archived_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

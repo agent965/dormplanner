@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { cleanupExpiredEvents, db } from "@/lib/db";
 import { events, rsvps, users } from "@/lib/db/schema";
 import { EventFeed } from "@/components/EventFeed";
+import type { RsvpPerson } from "@/components/EventCard";
 import { DormPicker } from "@/components/DormPicker";
 import { dormName } from "@/lib/dorms";
 
@@ -55,20 +56,65 @@ export default async function Home() {
     .orderBy(events.canceled, events.startsAt, sql`lower(${events.title})`)
     .limit(50);
 
-  const serializedEvents = rows.map((e) => ({
-    id: e.id,
-    title: e.title,
-    description: e.description,
-    startsAt: new Date(e.startsAt).toISOString(),
-    endsAt: e.endsAt ? new Date(e.endsAt).toISOString() : null,
-    location: e.location,
-    dormSlug: e.dormSlug,
-    hostName: e.hostName,
-    rsvpYesCount: e.rsvpYesCount,
-    capacity: e.capacity,
-    tags: e.tags,
-    canceled: e.canceled,
-  }));
+  const rsvpRows =
+    rows.length > 0
+      ? await db
+          .select({
+            eventId: rsvps.eventId,
+            status: rsvps.status,
+            username: users.username,
+            guestName: rsvps.guestName,
+          })
+          .from(rsvps)
+          .leftJoin(users, eq(rsvps.userId, users.id))
+          .where(
+            inArray(
+              rsvps.eventId,
+              rows.map((r) => r.id)
+            )
+          )
+          .orderBy(rsvps.updatedAt)
+      : [];
+
+  const rsvpByEvent = new Map<
+    string,
+    { going: RsvpPerson[]; maybe: RsvpPerson[]; cantGo: RsvpPerson[] }
+  >();
+  for (const r of rsvpRows) {
+    let bucket = rsvpByEvent.get(r.eventId);
+    if (!bucket) {
+      bucket = { going: [], maybe: [], cantGo: [] };
+      rsvpByEvent.set(r.eventId, bucket);
+    }
+    const person: RsvpPerson = {
+      name: r.username ?? r.guestName ?? "guest",
+      username: r.username ?? null,
+    };
+    if (r.status === "yes") bucket.going.push(person);
+    else if (r.status === "maybe") bucket.maybe.push(person);
+    else if (r.status === "no") bucket.cantGo.push(person);
+  }
+
+  const serializedEvents = rows.map((e) => {
+    const rsvpLists = rsvpByEvent.get(e.id);
+    return {
+      id: e.id,
+      title: e.title,
+      description: e.description,
+      startsAt: new Date(e.startsAt).toISOString(),
+      endsAt: e.endsAt ? new Date(e.endsAt).toISOString() : null,
+      location: e.location,
+      dormSlug: e.dormSlug,
+      hostName: e.hostName,
+      rsvpYesCount: e.rsvpYesCount,
+      capacity: e.capacity,
+      tags: e.tags,
+      canceled: e.canceled,
+      goingList: rsvpLists?.going ?? [],
+      maybeList: rsvpLists?.maybe ?? [],
+      cantGoList: rsvpLists?.cantGo ?? [],
+    };
+  });
 
   return (
     <div className="space-y-6">

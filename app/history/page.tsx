@@ -25,7 +25,8 @@ export default async function HistoryPage() {
     ? rows.filter(
         (e) =>
           e.hostName.toLowerCase() === myUsername ||
-          e.attendeeUsernames.some((u) => u.toLowerCase() === myUsername)
+          e.attendeeUsernames.some((u) => u.toLowerCase() === myUsername) ||
+          (e.maybeUsernames ?? []).some((u) => u.toLowerCase() === myUsername)
       )
     : [];
 

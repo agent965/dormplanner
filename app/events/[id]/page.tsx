@@ -85,12 +85,43 @@ export default async function EventDetail({
     .where(eq(rsvps.eventId, id))
     .orderBy(desc(rsvps.updatedAt));
 
+  const goingList = guestList.filter((g) => g.status === "yes");
+  const maybeList = guestList.filter((g) => g.status === "maybe");
+  const cantGoList = guestList.filter((g) => g.status === "no");
+  const hasRsvpBubbles =
+    goingList.length > 0 || maybeList.length > 0 || cantGoList.length > 0;
+
   const full = row.capacity != null && yesCount >= row.capacity;
   const isHost = actor?.kind === "user" && actor.userId === row.hostId;
   const inProgressLeft = getInProgressRemaining(
     new Date(row.startsAt),
     row.endsAt ? new Date(row.endsAt) : null
   );
+
+  function renderGuestBubble(
+    g: { name: string | null; guestName: string | null },
+    key: string,
+    bubbleClass: string
+  ) {
+    const label = g.name ?? g.guestName ?? "guest";
+    const cls = `inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${bubbleClass}`;
+    if (g.name) {
+      return (
+        <Link
+          key={key}
+          href={`/users/${encodeURIComponent(g.name)}`}
+          className={`${cls} hover:underline`}
+        >
+          {label}
+        </Link>
+      );
+    }
+    return (
+      <span key={key} className={cls}>
+        {label}
+      </span>
+    );
+  }
 
   return (
     <article className="space-y-6">
@@ -123,6 +154,31 @@ export default async function EventDetail({
           )}
           {row.openToAllDorms ? " · open to all dorms" : ""}
         </div>
+        {hasRsvpBubbles ? (
+          <div className="flex flex-wrap items-center gap-1 pt-0.5">
+            {goingList.map((g, i) =>
+              renderGuestBubble(
+                g,
+                `yes-${i}`,
+                "bg-[#007FFF] text-white border border-[#007FFF]"
+              )
+            )}
+            {maybeList.map((g, i) =>
+              renderGuestBubble(
+                g,
+                `maybe-${i}`,
+                "bg-[#F9E076] text-[#1a1a1a] border border-[#e5c858]"
+              )
+            )}
+            {cantGoList.map((g, i) =>
+              renderGuestBubble(
+                g,
+                `no-${i}`,
+                "bg-white text-[#dc2626] border border-[#dc2626]"
+              )
+            )}
+          </div>
+        ) : null}
         {row.tags && row.tags.length > 0 ? (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {row.tags.map((t) => (
@@ -172,27 +228,6 @@ export default async function EventDetail({
           actorKind={actor?.kind ?? "guest"}
           initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
         />
-        {guestList.length > 0 ? (
-          <ul className="pt-2 text-xs text-[color:var(--muted)] space-y-0.5">
-            {guestList
-              .filter((g) => g.status === "yes")
-              .map((g, i) => (
-                <li key={i}>
-                  ·{" "}
-                  {g.name ? (
-                    <Link
-                      href={`/users/${encodeURIComponent(g.name)}`}
-                      className="underline hover:text-[color:var(--husky-purple)]"
-                    >
-                      {g.name}
-                    </Link>
-                  ) : (
-                    g.guestName ?? "someone"
-                  )}
-                </li>
-              ))}
-          </ul>
-        ) : null}
       </section>
 
       <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">

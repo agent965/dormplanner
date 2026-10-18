@@ -16,6 +16,8 @@ export type PastEventItem = {
   rsvpYesCount: number;
   attendeeUsernames: string[];
   attendeeNames: string[];
+  maybeUsernames?: string[];
+  maybeNames?: string[];
 };
 
 export function PastEventCard({
@@ -25,7 +27,13 @@ export function PastEventCard({
   event: PastEventItem;
   roleLabel?: "Hosted" | "Attended" | null;
 }) {
-  const registeredSet = new Set(e.attendeeUsernames.map((u) => u.toLowerCase()));
+  const registeredSet = new Set([
+    ...e.attendeeUsernames.map((u) => u.toLowerCase()),
+    ...(e.maybeUsernames ?? []).map((u) => u.toLowerCase()),
+  ]);
+  const goingNames = e.attendeeNames ?? [];
+  const maybeNames = e.maybeNames ?? [];
+  const hasBubbles = goingNames.length > 0 || maybeNames.length > 0;
 
   return (
     <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-2">
@@ -53,6 +61,46 @@ export function PastEventCard({
               {e.hostName}
             </Link>
           </div>
+          {hasBubbles ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
+              {goingNames.map((name, idx) => {
+                const isRegistered = registeredSet.has(name.toLowerCase());
+                const cls =
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#007FFF] text-white border border-[#007FFF]";
+                return isRegistered ? (
+                  <Link
+                    key={`yes-${name}-${idx}`}
+                    href={`/users/${encodeURIComponent(name)}`}
+                    className={`${cls} hover:underline`}
+                  >
+                    {name}
+                  </Link>
+                ) : (
+                  <span key={`yes-${name}-${idx}`} className={cls}>
+                    {name}
+                  </span>
+                );
+              })}
+              {maybeNames.map((name, idx) => {
+                const isRegistered = registeredSet.has(name.toLowerCase());
+                const cls =
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F9E076] text-[#1a1a1a] border border-[#e5c858]";
+                return isRegistered ? (
+                  <Link
+                    key={`maybe-${name}-${idx}`}
+                    href={`/users/${encodeURIComponent(name)}`}
+                    className={`${cls} hover:underline`}
+                  >
+                    {name}
+                  </Link>
+                ) : (
+                  <span key={`maybe-${name}-${idx}`} className={cls}>
+                    {name}
+                  </span>
+                );
+              })}
+            </div>
+          ) : null}
           {e.tags && e.tags.length > 0 ? (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {e.tags.map((t) => (
@@ -80,30 +128,6 @@ export function PastEventCard({
           </div>
         </div>
       </div>
-
-      {e.attendeeNames && e.attendeeNames.length > 0 ? (
-        <div className="pt-2 border-t border-[color:var(--border)] text-xs text-[color:var(--muted)] flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span>Attendees:</span>
-          {e.attendeeNames.map((name, idx) => {
-            const isRegistered = registeredSet.has(name.toLowerCase());
-            return (
-              <span key={`${name}-${idx}`}>
-                {isRegistered ? (
-                  <Link
-                    href={`/users/${encodeURIComponent(name)}`}
-                    className="underline hover:text-[color:var(--husky-purple)]"
-                  >
-                    {name}
-                  </Link>
-                ) : (
-                  name
-                )}
-                {idx < e.attendeeNames.length - 1 ? "," : ""}
-              </span>
-            );
-          })}
-        </div>
-      ) : null}
     </div>
   );
 }

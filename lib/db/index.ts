@@ -37,8 +37,12 @@ CREATE TABLE IF NOT EXISTS "past_events" (
   "rsvp_yes_count" integer DEFAULT 0 NOT NULL,
   "attendee_usernames" text[] DEFAULT '{}' NOT NULL,
   "attendee_names" text[] DEFAULT '{}' NOT NULL,
+  "maybe_usernames" text[] DEFAULT '{}' NOT NULL,
+  "maybe_names" text[] DEFAULT '{}' NOT NULL,
   "archived_at" timestamp with time zone DEFAULT now() NOT NULL
 );
+ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "maybe_usernames" text[] DEFAULT '{}' NOT NULL;
+ALTER TABLE IF EXISTS "past_events" ADD COLUMN IF NOT EXISTS "maybe_names" text[] DEFAULT '{}' NOT NULL;
 `;
 
 if (!globalForDb.schemaSynced) {
@@ -80,7 +84,9 @@ export async function cleanupExpiredEvents() {
       "open_to_all_dorms",
       "rsvp_yes_count",
       "attendee_usernames",
-      "attendee_names"
+      "attendee_names",
+      "maybe_usernames",
+      "maybe_names"
     )
     SELECT
       e.id,
@@ -114,6 +120,25 @@ export async function cleanupExpiredEvents() {
           FROM rsvps r
           LEFT JOIN users ru ON r.user_id = ru.id
           WHERE r.event_id = e.id AND r.status = 'yes'
+          ORDER BY r.updated_at DESC
+        ),
+        '{}'::text[]
+      ),
+      COALESCE(
+        ARRAY(
+          SELECT DISTINCT ru.username
+          FROM rsvps r
+          JOIN users ru ON r.user_id = ru.id
+          WHERE r.event_id = e.id AND r.status = 'maybe' AND ru.username IS NOT NULL
+        ),
+        '{}'::text[]
+      ),
+      COALESCE(
+        ARRAY(
+          SELECT COALESCE(ru.username, r.guest_name, 'someone')
+          FROM rsvps r
+          LEFT JOIN users ru ON r.user_id = ru.id
+          WHERE r.event_id = e.id AND r.status = 'maybe'
           ORDER BY r.updated_at DESC
         ),
         '{}'::text[]
