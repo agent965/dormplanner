@@ -7,16 +7,6 @@ import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
 import { DormPicker } from "@/components/DormPicker";
 import { dormName } from "@/lib/dorms";
-import {
-  PizzaSlice,
-  Bowl,
-  Cookie,
-  Mug,
-  Pot,
-  Carrot,
-  Cupcake,
-  Bread,
-} from "@/components/FoodArt";
 
 export const dynamic = "force-dynamic";
 
@@ -130,20 +120,16 @@ export default async function Home() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden card p-5 sm:p-6">
-        {/* Scattered food doodles behind the hero */}
-        <div className="doodles" aria-hidden>
-          <PizzaSlice size={64} style={{ top: "-10px", left: "-6px", transform: "rotate(-18deg)" }} />
-          <Bowl size={56} style={{ top: "40%", right: "-10px", transform: "rotate(8deg)" }} />
-          <Cookie size={44} style={{ bottom: "-8px", left: "22%", transform: "rotate(-10deg)" }} />
-          <Mug size={48} style={{ top: "8px", right: "28%", transform: "rotate(14deg)" }} />
-          <Pot size={60} style={{ bottom: "-14px", right: "20%", transform: "rotate(-6deg)" }} />
-          <Carrot size={44} style={{ top: "48%", left: "32%", transform: "rotate(22deg)" }} />
-          <Cupcake size={40} style={{ top: "16%", left: "60%", transform: "rotate(-14deg)" }} />
-          <Bread size={52} style={{ bottom: "22%", left: "-10px", transform: "rotate(10deg)" }} />
-        </div>
-
-        <div className="relative flex items-start justify-between gap-3 flex-wrap">
+      <section
+        className="card p-5 sm:p-6"
+        style={{
+          borderWidth: 2,
+          borderColor: "color-mix(in srgb, var(--crust) 30%, var(--border))",
+          boxShadow:
+            "0 2px 0 color-mix(in srgb, var(--crust) 40%, transparent), 0 10px 30px -8px color-mix(in srgb, var(--crust) 25%, transparent)",
+        }}
+      >
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-semibold display">
               {me ? (
@@ -182,7 +168,7 @@ export default async function Home() {
           )}
         </div>
         {me ? (
-          <div className="relative mt-4 pt-4 border-t border-[color:var(--border)]">
+          <div className="mt-4 pt-4 border-t border-[color:var(--border)]">
             <DormPicker
               currentDormSlug={me.dormSlug ?? null}
               currentFloor={me.floor ?? null}

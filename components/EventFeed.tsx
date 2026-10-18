@@ -75,7 +75,7 @@ export function EventFeed({
           Tracking
         </h2>
         {trackingEvents.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[color:var(--border)] p-6 text-center text-sm text-[color:var(--muted)]">
+          <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
             No tracked events yet. Click the pin icon on an event to track it here.
           </div>
         ) : (
@@ -99,7 +99,7 @@ export function EventFeed({
           Upcoming
         </h2>
         {upcomingEvents.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[color:var(--border)] p-6 text-center text-sm text-[color:var(--muted)]">
+          <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
             {events.length === 0 ? (
               <>
                 Nothing on the calendar yet.
