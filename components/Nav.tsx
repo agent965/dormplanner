@@ -23,6 +23,12 @@ export function Nav({ user }: { user: NavUser }) {
             <span>dormplanner</span>
           </Link>
           <Link
+            href="/calendar"
+            className="text-sm font-medium text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
+          >
+            Calendar
+          </Link>
+          <Link
             href="/history"
             className="text-sm font-medium text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition-colors"
           >
