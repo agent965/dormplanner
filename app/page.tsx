@@ -6,6 +6,7 @@ import { events, rsvps, users } from "@/lib/db/schema";
 import { EventFeed } from "@/components/EventFeed";
 import type { RsvpPerson } from "@/components/EventCard";
 import { DormPicker } from "@/components/DormPicker";
+import { LandingHero } from "@/components/LandingHero";
 import { dormName } from "@/lib/dorms";
 
 export const dynamic = "force-dynamic";
@@ -15,41 +16,7 @@ export default async function Home() {
 
   const session = await auth();
   if (!session?.user?.id) {
-    return (
-      <div className="max-w-xl mx-auto mt-10 sm:mt-16 space-y-8">
-        <div
-          className="card p-6 sm:p-8 space-y-3"
-          style={{
-            borderWidth: 2,
-            borderColor: "color-mix(in srgb, var(--crust) 30%, var(--border))",
-            boxShadow:
-              "0 2px 0 color-mix(in srgb, var(--crust) 40%, transparent), 0 10px 30px -8px color-mix(in srgb, var(--crust) 25%, transparent)",
-          }}
-        >
-          <h1 className="display text-3xl sm:text-4xl font-bold tracking-tight">
-            Welcome to DormPlanner!
-          </h1>
-          <p className="text-sm sm:text-base text-[color:var(--muted)] text-left">
-            Plan, Join, and Delegate Responsibility to escape the Dining Hall, together!
-          </p>
-        </div>
-
-        <div className="flex flex-col items-center gap-4">
-          <Link
-            href="/signin"
-            className="w-full max-w-md py-3.5 px-6 rounded-xl bg-[color:var(--husky-purple)] text-white text-center text-base font-semibold shadow-sm hover:opacity-90 transition-opacity"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/signup"
-            className="w-full max-w-md py-3.5 px-6 rounded-xl border-2 border-[color:var(--husky-purple)] bg-[color:var(--surface)] text-[color:var(--husky-purple)] text-center text-base font-semibold shadow-sm hover:bg-[color:var(--husky-purple)] hover:text-white transition-colors"
-          >
-            Create an Account
-          </Link>
-        </div>
-      </div>
-    );
+    return <LandingHero />;
   }
 
   const me =
@@ -169,49 +136,33 @@ export default async function Home() {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-semibold display">
-              {me ? (
-                <>Hey {me.name?.split(" ")[0] ?? "there"}, hungry?</>
-              ) : (
-                <>What&apos;s cookin&apos; in the dorms?</>
-              )}
+              Hey {me?.name?.split(" ")[0] ?? "there"}, hungry?
             </h1>
             <p className="mt-1.5 text-sm text-[color:var(--muted)] max-w-md">
-              {me ? (
-                me.dormSlug ? (
-                  <>
-                    Showing events in <strong className="text-[color:var(--foreground)]">{dormName(me.dormSlug)}</strong>
-                    {me.floor ? ` · floor ${me.floor}` : ""} plus anything open to all dorms.
-                  </>
-                ) : (
-                  "Pick your dorm below to filter the feed."
-                )
+              {me?.dormSlug ? (
+                <>
+                  Showing events in <strong className="text-[color:var(--foreground)]">{dormName(me.dormSlug)}</strong>
+                  {me.floor ? ` · floor ${me.floor}` : ""} plus anything open to all dorms.
+                </>
               ) : (
-                <>Browse and RSVP freely, no account needed! Sign in with a username to host your own.</>
+                "Pick your dorm below to filter the feed."
               )}
             </p>
           </div>
-          {me ? (
-            <Link
-              href="/events/new"
-              className="inline-flex items-center gap-1.5 text-base font-bold px-5 py-2.5 rounded-full bg-[color:var(--crust)] text-white uppercase tracking-wide shadow-[0_4px_0_rgba(0,0,0,0.35)] hover:shadow-[0_5px_0_rgba(0,0,0,0.35)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.35)] transition-all whitespace-nowrap"
-            >
-              <span className="text-xl leading-none">+</span>
-              New event
-            </Link>
-          ) : (
-            <Link href="/signin" className="btn-primary text-sm whitespace-nowrap">
-              Sign in to host
-            </Link>
-          )}
+          <Link
+            href="/events/new"
+            className="inline-flex items-center gap-1.5 text-base font-bold px-5 py-2.5 rounded-full bg-[color:var(--crust)] text-white uppercase tracking-wide shadow-[0_4px_0_rgba(0,0,0,0.35)] hover:shadow-[0_5px_0_rgba(0,0,0,0.35)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.35)] transition-all whitespace-nowrap"
+          >
+            <span className="text-xl leading-none">+</span>
+            New event
+          </Link>
         </div>
-        {me ? (
-          <div className="mt-4 pt-4 border-t border-[color:var(--border)]">
-            <DormPicker
-              currentDormSlug={me.dormSlug ?? null}
-              currentFloor={me.floor ?? null}
-            />
-          </div>
-        ) : null}
+        <div className="mt-4 pt-4 border-t border-[color:var(--border)]">
+          <DormPicker
+            currentDormSlug={me?.dormSlug ?? null}
+            currentFloor={me?.floor ?? null}
+          />
+        </div>
       </section>
 
       <EventFeed events={serializedEvents} canCreate={!!me} />
