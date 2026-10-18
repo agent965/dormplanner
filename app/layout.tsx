@@ -23,7 +23,7 @@ const fredoka = Fredoka({
 
 export const metadata: Metadata = {
   title: "Dormplanner · UW",
-  description: "Plan dorm cooking nights, pizza parties, study breaks — with your floor.",
+  description: "Plan dorm cooking nights, pizza parties, and study breaks with your floor.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

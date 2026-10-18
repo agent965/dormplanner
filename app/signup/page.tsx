@@ -24,7 +24,7 @@ export default async function SignUp({
         />
         <h1 className="text-2xl font-semibold">Create a host account</h1>
         <p className="text-sm text-[color:var(--muted)]">
-          Pick a username to be shown as the host of your events.
+          Pick a username so other huskies know who's cooking!
         </p>
       </div>
       <SignupForm from={from ?? "/"} />

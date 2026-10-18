@@ -18,8 +18,8 @@ export default async function NewEventPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">New event</h1>
       <p className="text-sm text-[color:var(--muted)]">
-        Create a cooking night, pizza party, study break — whatever. Others on
-        your floor can RSVP and edit the bring-list.
+        Cooking night, pizza party, study break, whatever you want! Floormates
+        can RSVP and chip in on the bring-list.
       </p>
       <NewEventForm defaultDormSlug={me?.dormSlug ?? ""} />
     </div>

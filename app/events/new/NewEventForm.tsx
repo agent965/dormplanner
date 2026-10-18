@@ -13,7 +13,7 @@ const EVENT_TEMPLATES = [
   { label: "Study break", title: "Study break", desc: "20 min break with snacks. Finals mode activated." },
   { label: "Cooking night", title: "Cooking night", desc: "We cook, you bring ingredients. See bring-list." },
   { label: "Movie night", title: "Movie night", desc: "Pick a movie + snacks on the list." },
-  { label: "Grocery run", title: "Trader Joe's run", desc: "Going to TJ's — drop what you need in the list." },
+  { label: "Grocery run", title: "Trader Joe's run", desc: "Going to TJ's. Drop what you need in the list." },
 ] as const;
 
 function roundToNextHour(d: Date) {
@@ -186,7 +186,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
             onChange={(e) => setDormSlug(e.target.value)}
             className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm text-[color:var(--foreground)]"
           >
-            <option value="">— none —</option>
+            <option value="">No dorm</option>
             {UW_DORMS.map((d) => (
               <option key={d.slug} value={d.slug}>
                 {d.name}
@@ -252,7 +252,7 @@ export function NewEventForm({ defaultDormSlug }: { defaultDormSlug: string }) {
 
       {quietWarning ? (
         <div className="text-xs rounded-md border border-[color:var(--husky-gold)] bg-[color:var(--husky-gold)]/10 px-3 py-2">
-          Heads up: this runs past 10pm on a weeknight. Dorm quiet hours start at 10pm Sun–Thu — maybe move it earlier or dial down the volume.
+          Heads up: this runs past 10pm on a weeknight. Dorm quiet hours start at 10pm Sun through Thu, so maybe move it earlier or dial down the volume.
         </div>
       ) : null}
 

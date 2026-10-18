@@ -32,9 +32,9 @@ export default async function EditProfilePage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="display text-2xl font-semibold">Edit your profile</h1>
+        <h1 className="display text-2xl font-semibold">Your profile</h1>
         <p className="text-sm text-[color:var(--muted)]">
-          Everything here is optional. Your username (@{me.username}) stays the same.
+          Add a photo and some details so other huskies get to know you better! Your @{me.username} stays locked in.
         </p>
       </header>
       <ProfileForm initial={me} />

@@ -268,7 +268,7 @@ export function HostEventActions({ event }: { event: EventData }) {
                 onChange={(e) => setDormSlug(e.target.value)}
                 className="mt-1 w-full bg-transparent border border-[color:var(--border)] rounded-md px-3 py-2 text-sm text-[color:var(--foreground)]"
               >
-                <option value="">— none —</option>
+                <option value="">No dorm</option>
                 {UW_DORMS.map((d) => (
                   <option key={d.slug} value={d.slug}>
                     {d.name}

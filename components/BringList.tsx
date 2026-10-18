@@ -53,7 +53,7 @@ export function BringList({
     if (actorKind === "user") {
       return !!userId && row.claimedById === userId;
     }
-    // Guests without a cookie yet have guestId=null — don't let that match
+    // Guests without a cookie yet have guestId=null; don't let that match
     // other null values (items claimed by signed-in users).
     return !!guestId && row.claimedByGuestId === guestId;
   };
@@ -256,7 +256,7 @@ export function BringList({
         )}
       </ul>
 
-      {/* Pending suggestions — host-only view */}
+      {/* Pending suggestions: host-only view */}
       {isHost && pending.length > 0 ? (
         <div className="pt-2 space-y-2">
           <div className="text-xs uppercase tracking-wide text-[color:var(--muted)] flex items-center gap-2">
