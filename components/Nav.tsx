@@ -38,9 +38,6 @@ export function Nav({ user }: { user: NavUser }) {
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <Link href="/events/new" className="hover:underline">
-                New event
-              </Link>
               {user.name ? (
                 <Link
                   href="/profile"
