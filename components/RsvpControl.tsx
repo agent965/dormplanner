@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getFingerprint } from "@/lib/fingerprint";
 
 type Status = "yes" | "maybe" | "no";
 
@@ -37,10 +38,11 @@ export function RsvpControl({
     const previous = status;
     setStatus(next);
     startTransition(async () => {
+      const fingerprint = actorKind === "guest" ? await getFingerprint() : undefined;
       const r = await fetch(`/api/events/${eventId}/rsvp`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ status: next }),
+        body: JSON.stringify({ status: next, fingerprint }),
       });
       if (!r.ok) {
         setStatus(previous);
@@ -48,6 +50,10 @@ export function RsvpControl({
         setError(
           data?.error === "name_required"
             ? "Please set your name above first."
+            : data?.error === "already_rsvpd"
+            ? "You've already RSVP'd on this device."
+            : data?.error === "event_canceled"
+            ? "This event was canceled."
             : "Could not update RSVP."
         );
         return;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { events, rsvps } from "@/lib/db/schema";
 import { ensureActor } from "@/lib/actor";
@@ -10,8 +10,8 @@ import { newId } from "@/lib/utils";
 const bodySchema = z.object({
   status: z.enum(["yes", "maybe", "no"]),
   note: z.string().max(200).optional(),
-  // If a guest hasn't set a name yet, they can pass it here and we'll store the cookie.
   guestName: z.string().trim().min(1).max(40).optional(),
+  fingerprint: z.string().min(8).max(128).optional(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -33,12 +33,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const actor = await ensureActor();
 
-  // If the user is a guest and gave us a name, remember it for next time.
   if (actor.kind === "guest" && parsed.data.guestName) {
     await setGuestName(parsed.data.guestName);
     actor.displayName = parsed.data.guestName;
   }
-
   if (actor.kind === "guest" && !actor.displayName) {
     return NextResponse.json({ error: "name_required" }, { status: 400 });
   }
@@ -46,7 +44,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const now = new Date();
 
   if (actor.kind === "user") {
-    // Upsert by (eventId, userId)
     const [existing] = await db
       .select({ id: rsvps.id })
       .from(rsvps)
@@ -66,33 +63,55 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         updatedAt: now,
       });
     }
-  } else {
-    // Guest: upsert by (eventId, guestId)
-    const [existing] = await db
-      .select({ id: rsvps.id })
-      .from(rsvps)
-      .where(and(eq(rsvps.eventId, eventId), eq(rsvps.guestId, actor.guestId)));
-    if (existing) {
-      await db
-        .update(rsvps)
-        .set({
-          status: parsed.data.status,
-          note: parsed.data.note,
-          guestName: actor.displayName,
-          updatedAt: now,
-        })
-        .where(eq(rsvps.id, existing.id));
-    } else {
-      await db.insert(rsvps).values({
-        id: newId(),
-        eventId,
-        guestId: actor.guestId,
-        guestName: actor.displayName,
+    return NextResponse.json({ ok: true });
+  }
+
+  // Guest flow: match by guestId OR fingerprint (fingerprint catches cookie-clearers)
+  const fp = parsed.data.fingerprint ?? null;
+  const matchClause = fp
+    ? or(eq(rsvps.guestId, actor.guestId), eq(rsvps.fingerprint, fp))
+    : eq(rsvps.guestId, actor.guestId);
+
+  const [existing] = await db
+    .select({ id: rsvps.id })
+    .from(rsvps)
+    .where(and(eq(rsvps.eventId, eventId), matchClause))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(rsvps)
+      .set({
         status: parsed.data.status,
         note: parsed.data.note,
+        guestName: actor.displayName,
+        guestId: actor.guestId,
+        fingerprint: fp,
         updatedAt: now,
-      });
+      })
+      .where(eq(rsvps.id, existing.id));
+    return NextResponse.json({ ok: true });
+  }
+
+  try {
+    await db.insert(rsvps).values({
+      id: newId(),
+      eventId,
+      guestId: actor.guestId,
+      guestName: actor.displayName,
+      fingerprint: fp,
+      status: parsed.data.status,
+      note: parsed.data.note,
+      updatedAt: now,
+    });
+  } catch (e: unknown) {
+    // Unique index collision on (event_id, fingerprint) — someone already
+    // RSVP'd from this device with a different cookie.
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("rsvps_event_fingerprint_uidx") || msg.toLowerCase().includes("unique")) {
+      return NextResponse.json({ error: "already_rsvpd" }, { status: 409 });
     }
+    throw e;
   }
 
   return NextResponse.json({ ok: true });

@@ -56,6 +56,16 @@ if (!globalForDb.schemaSynced) {
   pool
     .query(`ALTER TABLE IF EXISTS "bring_items" ADD COLUMN IF NOT EXISTS "approved" boolean DEFAULT false NOT NULL;`)
     .catch(() => {});
+  pool
+    .query(`ALTER TABLE IF EXISTS "rsvps" ADD COLUMN IF NOT EXISTS "fingerprint" text;`)
+    .catch(() => {});
+  pool
+    .query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "rsvps_event_fingerprint_uidx"
+       ON "rsvps" ("event_id", "fingerprint")
+       WHERE "fingerprint" IS NOT NULL AND "user_id" IS NULL;`
+    )
+    .catch(() => {});
   pool.query(ensurePastEventsSql).catch(() => {});
 }
 

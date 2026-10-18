@@ -107,6 +107,8 @@ export const rsvps = pgTable(
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     guestId: text("guest_id"),
     guestName: text("guest_name"),
+    // Browser fingerprint — survives cookie clearing, blocks casual re-RSVP
+    fingerprint: text("fingerprint"),
     status: rsvpStatus("status").notNull(),
     note: text("note"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -118,6 +120,9 @@ export const rsvps = pgTable(
     uniqueIndex("rsvps_event_guest_uidx")
       .on(t.eventId, t.guestId)
       .where(sql`${t.guestId} IS NOT NULL`),
+    uniqueIndex("rsvps_event_fingerprint_uidx")
+      .on(t.eventId, t.fingerprint)
+      .where(sql`${t.fingerprint} IS NOT NULL AND ${t.userId} IS NULL`),
   ]
 );
 
