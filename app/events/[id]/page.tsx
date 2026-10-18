@@ -9,6 +9,8 @@ import { GuestNameGate } from "@/components/GuestNameGate";
 import { HostEventActions } from "@/components/HostEventActions";
 import { PlannedDishesList } from "@/components/PlannedDishes";
 import { EventRolesAndLookingFor } from "@/components/LookingForSection";
+import { EventQrDialog } from "@/components/EventQrDialog";
+import { headers } from "next/headers";
 import {
   dietaryTagLabel,
   formatEventTime,
@@ -112,10 +114,17 @@ export default async function EventDetail({
 
   const full = row.capacity != null && yesCount >= row.capacity;
   const isHost = actor?.kind === "user" && actor.userId === row.hostId;
+  const isSignedIn = actor?.kind === "user";
   const inProgressLeft = getInProgressRemaining(
     new Date(row.startsAt),
     row.endsAt ? new Date(row.endsAt) : null
   );
+
+  // Build the full URL (scheme + host) for the QR code
+  const hdrs = await headers();
+  const host = hdrs.get("host") ?? "";
+  const proto = hdrs.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const eventUrl = `${proto}://${host}/events/${row.id}`;
 
   function renderGuestBubble(
     g: { name: string | null; guestName: string | null },
@@ -163,6 +172,13 @@ export default async function EventDetail({
               In Progress, {inProgressLeft} left
             </span>
           ) : null}
+          <div className="ml-auto">
+            <EventQrDialog
+              url={eventUrl}
+              title={row.title}
+              startsAt={new Date(row.startsAt).toISOString()}
+            />
+          </div>
         </div>
         <div className="text-sm text-[color:var(--muted)]">
           Hosted by{" "}
@@ -241,63 +257,91 @@ export default async function EventDetail({
         ) : null}
       </header>
 
-      <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-medium">Are you going?</h2>
-          <div className="text-xs text-[color:var(--muted)]">
-            {yesCount} going{row.capacity != null ? ` / ${row.capacity}` : ""}
+      {isSignedIn && actor ? (
+        <>
+          <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-medium">Are you going?</h2>
+              <div className="text-xs text-[color:var(--muted)]">
+                {yesCount} going{row.capacity != null ? ` / ${row.capacity}` : ""}
+              </div>
+            </div>
+            <GuestNameGate actorKind="user" initialName={null} />
+            <RsvpControl
+              eventId={row.id}
+              initial={myRsvp?.status ?? null}
+              full={full}
+              actorKind="user"
+              initialGuestName={null}
+            />
+          </section>
+
+          <EventRolesAndLookingFor
+            eventId={row.id}
+            initial={{
+              lookingForDishwasher: row.lookingForDishwasher,
+              lookingForCook: row.lookingForCook,
+              lookingForIngredients: row.lookingForIngredients,
+              lookingForCookware: row.lookingForCookware,
+              dishwasherClaimedById: row.dishwasherClaimedById,
+              dishwasherClaimedByGuestId: row.dishwasherClaimedByGuestId,
+              dishwasherClaimedByName: row.dishwasherClaimedByName,
+              cookClaimedById: row.cookClaimedById,
+              cookClaimedByGuestId: row.cookClaimedByGuestId,
+              cookClaimedByName: row.cookClaimedByName,
+            }}
+            actorKind="user"
+            userId={actor.kind === "user" ? actor.userId : null}
+            guestId={null}
+            initialGuestName={null}
+            isHost={isHost}
+          />
+
+          <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-medium">What to bring</h2>
+              <span className="text-xs text-[color:var(--muted)]">
+                {isHost ? "You moderate · live" : "Anyone can suggest · live"}
+              </span>
+            </div>
+            <BringList
+              eventId={row.id}
+              actorKind="user"
+              userId={actor.kind === "user" ? actor.userId : null}
+              guestId={null}
+              initialGuestName={null}
+              isHost={isHost}
+            />
+          </section>
+        </>
+      ) : (
+        <section
+          className="card p-6 text-center space-y-3"
+          style={{
+            borderWidth: 2,
+            borderColor: "color-mix(in srgb, var(--crust) 30%, var(--border))",
+          }}
+        >
+          <h2 className="display text-xl font-bold">Want in?</h2>
+          <p className="text-sm text-[color:var(--muted)] max-w-md mx-auto">
+            Sign in to RSVP, claim items from the bring-list, and see who&apos;s coming.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+            <Link
+              href={`/signin?from=${encodeURIComponent(`/events/${row.id}`)}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center text-base font-bold px-5 py-2.5 rounded-full bg-[color:var(--crust)] text-white uppercase tracking-wide shadow-[0_4px_0_rgba(0,0,0,0.35)] hover:shadow-[0_5px_0_rgba(0,0,0,0.35)] hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_rgba(0,0,0,0.35)] transition-all"
+            >
+              Sign in
+            </Link>
+            <Link
+              href={`/signup?from=${encodeURIComponent(`/events/${row.id}`)}`}
+              className="w-full sm:w-auto inline-flex items-center justify-center text-sm font-semibold px-5 py-2.5 rounded-full border-2 border-[color:var(--husky-purple)] text-[color:var(--husky-purple)] hover:bg-[color:var(--husky-purple)] hover:text-white transition-colors"
+            >
+              Create account
+            </Link>
           </div>
-        </div>
-        <GuestNameGate
-          actorKind={actor?.kind ?? "guest"}
-          initialName={actor?.kind === "guest" ? actor.displayName : null}
-        />
-        <RsvpControl
-          eventId={row.id}
-          initial={myRsvp?.status ?? null}
-          full={full}
-          actorKind={actor?.kind ?? "guest"}
-          initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
-        />
-      </section>
-
-      <EventRolesAndLookingFor
-        eventId={row.id}
-        initial={{
-          lookingForDishwasher: row.lookingForDishwasher,
-          lookingForCook: row.lookingForCook,
-          lookingForIngredients: row.lookingForIngredients,
-          lookingForCookware: row.lookingForCookware,
-          dishwasherClaimedById: row.dishwasherClaimedById,
-          dishwasherClaimedByGuestId: row.dishwasherClaimedByGuestId,
-          dishwasherClaimedByName: row.dishwasherClaimedByName,
-          cookClaimedById: row.cookClaimedById,
-          cookClaimedByGuestId: row.cookClaimedByGuestId,
-          cookClaimedByName: row.cookClaimedByName,
-        }}
-        actorKind={actor?.kind ?? "guest"}
-        userId={actor?.kind === "user" ? actor.userId : null}
-        guestId={actor?.kind === "guest" ? actor.guestId : null}
-        initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
-        isHost={isHost}
-      />
-
-      <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 space-y-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-medium">What to bring</h2>
-          <span className="text-xs text-[color:var(--muted)]">
-            {isHost ? "You moderate · live" : "Anyone can suggest · live"}
-          </span>
-        </div>
-        <BringList
-          eventId={row.id}
-          actorKind={actor?.kind ?? "guest"}
-          userId={actor?.kind === "user" ? actor.userId : null}
-          guestId={actor?.kind === "guest" ? actor.guestId : null}
-          initialGuestName={actor?.kind === "guest" ? actor.displayName : null}
-          isHost={isHost}
-        />
-      </section>
+        </section>
+      )}
     </article>
   );
 }
